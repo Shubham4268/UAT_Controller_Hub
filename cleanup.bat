@@ -1,0 +1,6 @@
+@echo off
+echo Deleting app\lead...
+rd /s /q "app\lead"
+echo Deleting app\tester...
+rd /s /q "app\tester"
+echo Done.
