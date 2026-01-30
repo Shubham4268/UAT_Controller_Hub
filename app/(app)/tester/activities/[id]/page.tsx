@@ -7,7 +7,7 @@ import { IssueSubmissionForm } from '@/components/tester/IssueSubmissionForm';
 import { IssueTable } from '@/components/common/IssueTable';
 import { AppQrSection } from '@/components/common/AppQrSection';
 import { useSocket } from '@/components/providers/SocketProvider';
-import { AlertCircle, PlayCircle, StopCircle } from 'lucide-react';
+import { AlertCircle, PlayCircle, StopCircle, CheckCircle2, User, Users } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../../../../../components/ui/alert';
 
 interface Activity {
@@ -23,19 +23,23 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
     const { id } = use(params);
     const [session, setSession] = useState<any | null>(null);
     const [issues, setIssues] = useState<any[]>([]);
+    const [user, setUser] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
     const { socket } = useSocket();
+    const currentUserId = user?.userId;
 
     useEffect(() => {
         async function fetchData() {
             try {
-                const [sessionRes, issuesRes] = await Promise.all([
+                const [sessionRes, issuesRes, userRes] = await Promise.all([
                     fetch(`/api/test-sessions/${id}`),
                     fetch(`/api/issues?sessionId=${id}`),
+                    fetch('/api/auth/me'),
                 ]);
 
                 if (sessionRes.ok) setSession(await sessionRes.json());
                 if (issuesRes.ok) setIssues(await issuesRes.json());
+                if (userRes.ok) setUser(await userRes.json());
             } catch (e) {
                 console.error(e);
             } finally {
@@ -46,7 +50,7 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
         fetchData();
 
         if (socket) {
-            socket.emit('join-activity', id);
+            socket.emit('join:session', id);
 
             socket.on('issue:refreshed', (updatedIssue: any) => {
                 setIssues((prev) =>
@@ -54,11 +58,14 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
                 );
             });
 
-            socket.on('issue:new', (newIssue: any) => {
-                setIssues((prev) => [newIssue, ...prev]);
+            socket.on('issue:created', (newIssue: any) => {
+                setIssues((prev) => {
+                    if (prev.some(iss => iss._id === newIssue._id)) return prev;
+                    return [...prev, newIssue];
+                });
             });
 
-            socket.on('session:updated', (updatedSession: any) => {
+            socket.on('session:data-updated', (updatedSession: any) => {
                 if (updatedSession._id === id) {
                     setSession(updatedSession);
                 }
@@ -68,8 +75,8 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
         return () => {
             if (socket) {
                 socket.off('issue:refreshed');
-                socket.off('issue:new');
-                socket.off('session:updated');
+                socket.off('issue:created');
+                socket.off('session:data-updated');
             }
         };
     }, [id, socket]);
@@ -83,17 +90,32 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
                 <div className="space-y-1">
                     <div className="flex items-center gap-3">
                         <h1 className="text-3xl font-bold tracking-tight">{session.title}</h1>
-                        <Badge variant={session.status === 'ACTIVE' ? 'success' : 'secondary'} className="h-6">
-                            {session.status === 'ACTIVE' ? '● Active' : '● Stopped'}
-                        </Badge>
+                        <div className="flex gap-2">
+                            <Badge variant={session.status === 'ACTIVE' ? 'success' : 'secondary'} className="h-6">
+                                {session.status === 'ACTIVE' ? '● Active' : '● Stopped'}
+                            </Badge>
+                            {session.completionStatus === 'COMPLETED' && (
+                                <Badge variant="outline" className="h-6 bg-blue-50 text-blue-700 border-blue-200 gap-1">
+                                    <CheckCircle2 className="h-3 w-3" /> Completed
+                                </Badge>
+                            )}
+                        </div>
                     </div>
                     <p className="text-muted-foreground capitalize text-sm">Test Session - Reporter View</p>
                 </div>
-                {session.status === 'ACTIVE' ? (
+                {session.completionStatus === 'COMPLETED' ? (
+                    <div className="flex items-center gap-2 text-blue-700 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 border-dashed">
+                        <CheckCircle2 className="h-5 w-5" />
+                        <span className="text-sm font-medium">Session Completed</span>
+                    </div>
+                ) : session.status === 'ACTIVE' ? (
                     <IssueSubmissionForm
                         sessionId={id}
                         onSuccess={(newIssue) => {
-                            setIssues((prev) => [newIssue, ...prev]);
+                            setIssues((prev) => {
+                                if (prev.some(iss => iss._id === newIssue._id)) return prev;
+                                return [...prev, newIssue];
+                            });
                         }}
                     />
                 ) : (
@@ -104,7 +126,15 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
                 )}
             </div>
 
-            {session.status === 'STOPPED' && (
+            {session.completionStatus === 'COMPLETED' ? (
+                <Alert className="bg-blue-50 text-blue-800 border-blue-200">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <AlertTitle>Session Successfully Completed</AlertTitle>
+                    <AlertDescription>
+                        This session has been marked as completed by the Lead. No further issues can be reported.
+                    </AlertDescription>
+                </Alert>
+            ) : session.status === 'STOPPED' && (
                 <Alert variant="destructive" className="bg-destructive/5 text-destructive border-destructive/20">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Session Stopped</AlertTitle>
@@ -136,9 +166,32 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
                 iosQr={session.iosQr}
             />
 
-            <div className="space-y-4">
-                <h2 className="text-xl font-bold">My Reported Issues</h2>
-                <IssueTable issues={issues} mode="tester" showComment={true} />
+            <div className="space-y-12">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <User className="h-5 w-5 text-primary" />
+                        <h2 className="text-xl font-bold text-primary">My Reported Issues</h2>
+                    </div>
+                    <IssueTable
+                        issues={issues.filter(iss => (iss.testerId?._id || iss.testerId) === currentUserId)}
+                        mode="tester"
+                        showComment={true}
+                    />
+                </div>
+
+                <div className="space-y-4 pt-8 border-t">
+                    <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-muted-foreground" />
+                        <h2 className="text-xl font-bold">Other Testers' Issues</h2>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Context from peer-reported issues (view-only).</p>
+                    <IssueTable
+                        issues={issues.filter(iss => (iss.testerId?._id || iss.testerId) !== currentUserId)}
+                        mode="tester"
+                        showComment={true}
+                        showTesterName={true}
+                    />
+                </div>
             </div>
         </div>
     );

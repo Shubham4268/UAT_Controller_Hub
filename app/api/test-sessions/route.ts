@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db/mongo';
 import TestSession from '@/models/TestSession';
+import Issue from '@/models/Issue';
 import { getAuthUser } from '@/lib/auth/auth';
 import { ROLES } from '@/config/roles';
 import { generateSessionToken, constructSessionLinks, generateQRCodeUrl } from '@/utils/links';
@@ -60,9 +61,28 @@ export async function GET(req: NextRequest) {
 
         // Both Leads and Testers should see all sessions in this centralized board
         const query = {};
-        const sessions = await TestSession.find(query).sort({ createdAt: -1 });
+        const sessions = await TestSession.find(query).sort({ createdAt: -1 }).lean();
 
-        return NextResponse.json(sessions);
+        // Enriched sessions with issue stats for Lead dashboard
+        const enrichedSessions = await Promise.all(sessions.map(async (s: any) => {
+            const [totalIssues, pendingIssues, uniqueTesters] = await Promise.all([
+                Issue.countDocuments({ sessionId: s._id }),
+                Issue.countDocuments({ sessionId: s._id, status: { $nin: ['VALIDATED', 'NA'] } }),
+                Issue.distinct('testerId', { sessionId: s._id })
+            ]);
+
+            return {
+                ...s,
+                issueStats: {
+                    total: totalIssues,
+                    pending: pendingIssues,
+                    isEligible: totalIssues > 0 && pendingIssues === 0,
+                    testerCount: uniqueTesters.length
+                }
+            };
+        }));
+
+        return NextResponse.json(enrichedSessions);
     } catch (error: any) {
         console.error('Error fetching test sessions:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

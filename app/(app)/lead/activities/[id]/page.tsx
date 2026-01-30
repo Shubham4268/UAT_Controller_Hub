@@ -8,7 +8,8 @@ import { IssueTable } from '@/components/common/IssueTable';
 import { ValidationModal } from '@/components/lead/ValidationModal';
 import { AppQrSection } from '@/components/common/AppQrSection';
 import { useSocket } from '@/components/providers/SocketProvider';
-import { Play, Square, Loader2 } from 'lucide-react';
+import { CompletionConfirmModal } from '@/components/lead/CompletionConfirmModal';
+import { Play, Square, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface Activity {
     _id: string;
@@ -26,6 +27,7 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
     const [selectedIssue, setSelectedIssue] = useState<any | null>(null);
     const [isValidationOpen, setIsValidationOpen] = useState(false);
     const [toggling, setToggling] = useState(false);
+    const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
     const { socket } = useSocket();
 
     useEffect(() => {
@@ -48,19 +50,23 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
         fetchData();
 
         if (socket) {
-            socket.emit('join-activity', id);
+            socket.emit('join:session', id);
 
-            socket.on('issue:new', (newIssue: any) => {
-                setIssues((prev) => [newIssue, ...prev]);
+            socket.on('issue:created', (newIssue: any) => {
+                setIssues((prev) => {
+                    // Prevent duplicates
+                    if (prev.some(iss => iss._id === newIssue._id)) return prev;
+                    return [...prev, newIssue];
+                });
             });
 
-            socket.on('issue-refreshed', (updatedIssue: any) => {
+            socket.on('issue:refreshed', (updatedIssue: any) => {
                 setIssues((prev) =>
                     prev.map((iss) => (iss._id === updatedIssue._id ? updatedIssue : iss))
                 );
             });
 
-            socket.on('session:updated', (updatedSession: any) => {
+            socket.on('session:data-updated', (updatedSession: any) => {
                 if (updatedSession._id === id) {
                     setSession(updatedSession);
                 }
@@ -69,9 +75,9 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
 
         return () => {
             if (socket) {
-                socket.off('issue:new');
+                socket.off('issue:created');
                 socket.off('issue:refreshed');
-                socket.off('session:updated');
+                socket.off('session:data-updated');
             }
         };
     }, [id, socket]);
@@ -116,6 +122,31 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
         }
     };
 
+    const handleCompleteSession = async () => {
+        if (!session) return;
+        setToggling(true);
+        try {
+            const res = await fetch(`/api/test-sessions/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completionStatus: 'COMPLETED' }),
+            });
+
+            if (res.ok) {
+                const updated = await res.json();
+                setSession(updated);
+                if (socket) {
+                    socket.emit('session:completed', updated);
+                    socket.emit('session:updated', updated);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to complete session', error);
+        } finally {
+            setToggling(false);
+        }
+    };
+
     const pendingIssues = issues.filter(iss => iss.status !== 'VALIDATED' && iss.status !== 'NA');
     const validatedIssues = issues.filter(iss => iss.status === 'VALIDATED' || iss.status === 'NA');
 
@@ -128,36 +159,61 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
                 <div className="space-y-1">
                     <div className="flex items-center gap-3">
                         <h1 className="text-3xl font-bold tracking-tight">{session.title}</h1>
-                        <Badge variant={session.status === 'ACTIVE' ? 'success' : 'secondary'} className="h-6">
-                            {session.status === 'ACTIVE' ? '● Active' : '● Stopped'}
-                        </Badge>
+                        <div className="flex gap-2">
+                            <Badge variant={session.status === 'ACTIVE' ? 'success' : 'secondary'} className="h-6">
+                                {session.status === 'ACTIVE' ? '● Active' : '● Stopped'}
+                            </Badge>
+                            {session.completionStatus === 'COMPLETED' && (
+                                <Badge variant="outline" className="h-6 bg-blue-50 text-blue-700 border-blue-200 gap-1">
+                                    <CheckCircle2 className="h-3 w-3" /> Completed
+                                </Badge>
+                            )}
+                        </div>
                     </div>
                     <p className="text-muted-foreground italic text-sm">
-                        {session.status === 'ACTIVE'
-                            ? `Started at ${new Date(session.startedAt).toLocaleTimeString()}`
-                            : 'This session is currently stopped.'}
+                        {session.completionStatus === 'COMPLETED'
+                            ? `Completed on ${new Date(session.completedAt).toLocaleDateString()} at ${new Date(session.completedAt).toLocaleTimeString()}`
+                            : session.status === 'ACTIVE'
+                                ? `Started at ${new Date(session.startedAt).toLocaleTimeString()}`
+                                : 'This session is currently stopped.'}
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    {session.status === 'STOPPED' ? (
-                        <Button
-                            onClick={handleToggleSession}
-                            disabled={toggling}
-                            className="bg-green-600 hover:bg-green-700 gap-2 px-6"
-                        >
-                            {toggling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 fill-current" />}
-                            Start Session
-                        </Button>
-                    ) : (
-                        <Button
-                            onClick={handleToggleSession}
-                            variant="destructive"
-                            disabled={toggling}
-                            className="gap-2 px-6"
-                        >
-                            {toggling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="h-4 w-4 fill-current" />}
-                            Stop Session
-                        </Button>
+                    {session.completionStatus !== 'COMPLETED' && (
+                        <>
+                            {pendingIssues.length === 0 && issues.length > 0 && (
+                                <Button
+                                    onClick={() => setIsCompleteModalOpen(true)}
+                                    disabled={toggling}
+                                    variant="outline"
+                                    className="border-green-600 text-green-600 hover:bg-green-50 gap-2 px-6"
+                                >
+                                    {toggling ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                                    Mark as Completed
+                                </Button>
+                            )}
+
+                            {session.status === 'STOPPED' ? (
+                                <Button
+                                    onClick={handleToggleSession}
+                                    disabled={toggling}
+                                    className="bg-green-600 hover:bg-green-700 gap-2 px-6"
+                                >
+                                    {toggling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 fill-current" />}
+                                    Start Session
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={handleToggleSession}
+                                    variant="destructive"
+                                    disabled={toggling}
+                                    className="gap-2 px-6"
+                                >
+                                    {toggling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="h-4 w-4 fill-current" />}
+                                    Stop Session
+                                </Button>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
@@ -220,6 +276,13 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
                 open={isValidationOpen}
                 onOpenChange={setIsValidationOpen}
                 onSuccess={onValidationSuccess}
+            />
+
+            <CompletionConfirmModal
+                open={isCompleteModalOpen}
+                onOpenChange={setIsCompleteModalOpen}
+                onConfirm={handleCompleteSession}
+                loading={toggling}
             />
         </div>
     );

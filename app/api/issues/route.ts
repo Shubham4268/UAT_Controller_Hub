@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db/mongo';
 import Issue from '@/models/Issue';
+import TestSession from '@/models/TestSession';
 import { getAuthUser } from '@/lib/auth/auth';
 
 export async function POST(req: NextRequest) {
@@ -19,13 +20,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        // Check if session is ACTIVE and not COMPLETED
+        const testSession = await TestSession.findById(sessionId);
+        if (!testSession) {
+            return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+        }
+
+        if (testSession.status !== 'ACTIVE' || testSession.completionStatus === 'COMPLETED') {
+            return NextResponse.json({ error: 'Issues can only be submitted for ACTIVE sessions' }, { status: 403 });
+        }
+
         const issue = await Issue.create({
             sessionId,
             testerId: session.userId,
             title,
             description,
             media,
-            status: 'SUBMITTED',
+            status: 'NOT_VALIDATED',
         });
 
         const populatedIssue = await Issue.findById(issue._id).populate('testerId', 'name username image');
@@ -53,16 +64,13 @@ export async function GET(req: NextRequest) {
 
         await connectDB();
 
-        // Testers see only their own issues for that session
-        // Leads see all issues for that session
+        // Leads and Testers should see all issues for that session
+        // (Visibility filtering is handled on the frontend for specific views)
         const query: any = { sessionId };
-        if (session.role === 'tester') {
-            query.testerId = session.userId;
-        }
 
         const issues = await Issue.find(query)
             .populate('testerId', 'name username image')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: 1 });
 
         return NextResponse.json(issues);
     } catch (error: any) {

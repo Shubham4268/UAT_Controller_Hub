@@ -22,23 +22,36 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIO) => {
         io.on('connection', (socket) => {
             console.log('New client connected');
 
-            socket.on('join-activity', (activityId) => {
-                socket.join(`activity-${activityId}`);
-                console.log(`Socket joined room: activity-${activityId}`);
+            socket.on('join:session', (sessionId) => {
+                socket.join(sessionId);
+                console.log(`Socket joined session room: ${sessionId}`);
             });
 
             socket.on('issue:submitted', (data) => {
-                const roomId = data.sessionId || data.activityId;
-                socket.to(`activity-${roomId}`).emit('issue:new', data);
+                const roomId = data.sessionId;
+                if (roomId) {
+                    // Emit issue:created to everyone in the room (including sender if desired, 
+                    // but usually sender updates local state immediately, so .to().emit() is common)
+                    io.to(roomId).emit('issue:created', data);
+                }
             });
 
             socket.on('issue:validated', (data) => {
-                socket.to(`activity-${data.sessionId || data.activityId}`).emit('issue:refreshed', data);
+                const roomId = data.sessionId;
+                if (roomId) {
+                    io.to(roomId).emit('issue:refreshed', data);
+                }
             });
 
             socket.on('new-session', (data) => {
-                // Broadcast session creation to all leads/admins
                 socket.broadcast.emit('session-created', data);
+            });
+
+            socket.on('session:updated', (data) => {
+                const roomId = data._id;
+                if (roomId) {
+                    io.to(roomId).emit('session:data-updated', data);
+                }
             });
         });
 

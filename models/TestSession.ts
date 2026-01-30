@@ -12,8 +12,10 @@ export interface ITestSession extends Document {
     iosQr?: string;          // QR code URL or base64
     token: string;
     status: 'ACTIVE' | 'STOPPED';
+    completionStatus: 'ACTIVE' | 'COMPLETED';
     startedAt?: Date;
     stoppedAt?: Date;
+    completedAt?: Date;
     createdBy: mongoose.Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
@@ -41,8 +43,15 @@ const TestSessionSchema: Schema<ITestSession> = new Schema(
             default: 'STOPPED',
             required: true,
         },
+        completionStatus: {
+            type: String,
+            enum: ['ACTIVE', 'COMPLETED'],
+            default: 'ACTIVE',
+            required: true,
+        },
         startedAt: { type: Date },
         stoppedAt: { type: Date },
+        completedAt: { type: Date },
         createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     },
     { timestamps: true }

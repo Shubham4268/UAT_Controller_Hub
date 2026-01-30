@@ -23,10 +23,9 @@ const UserSchema: Schema<IUser> = new Schema(
       unique: true,
       validate: {
         validator: function (v: string) {
-          // Validate First.Last format (e.g., John.Doe, admin.user)
-          // At least one character before and after the dot
-          // Only letters allowed (case-insensitive)
-          return /^[a-zA-Z]+\.[a-zA-Z]+$/.test(v);
+          // Validate First.Last format (e.g., John1.Doe, admin.user)
+          // Allows letters and numbers
+          return /^[a-zA-Z0-9]+\.[a-zA-Z0-9]+$/.test(v);
         },
         message: 'Username must be in format First.Last (e.g., John.Doe)',
       },

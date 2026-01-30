@@ -20,13 +20,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    SUBMITTED: 'secondary',
+    NOT_VALIDATED: 'secondary',
     VALIDATED: 'default', // Using default/primary for validated
     NA: 'outline',
 };
 
 const STATUS_LABELS: Record<string, string> = {
-    SUBMITTED: 'Not Validated',
+    NOT_VALIDATED: 'Not Validated',
     VALIDATED: 'Validated',
     NA: 'N/A',
 };
@@ -62,7 +62,8 @@ interface IssueTableProps {
     hideStatus?: boolean;
     showComment?: boolean;
     hideAction?: boolean;
-    actionLabel?: string; // New prop for custom action button text
+    actionLabel?: string;
+    showTesterName?: boolean;
 }
 
 export function IssueTable({
@@ -72,7 +73,8 @@ export function IssueTable({
     hideStatus = false,
     showComment = false,
     hideAction = false,
-    actionLabel = "Validate" // Default label
+    actionLabel = "Validate",
+    showTesterName = false
 }: IssueTableProps) {
     return (
         <div className="rounded-md border">
@@ -80,7 +82,7 @@ export function IssueTable({
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[60px]">S.No</TableHead>
-                        <TableHead>Tester</TableHead>
+                        {showTesterName && <TableHead>Tester</TableHead>}
                         <TableHead>Title</TableHead>
                         <TableHead className="hidden md:table-cell">Description</TableHead>
                         <TableHead>Media</TableHead>
@@ -94,7 +96,7 @@ export function IssueTable({
                 <TableBody>
                     {issues.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={hideAction ? 8 : 9} className="text-center py-4 text-muted-foreground">
+                            <TableCell colSpan={10} className="text-center py-4 text-muted-foreground">
                                 No issues reported yet.
                             </TableCell>
                         </TableRow>
@@ -102,10 +104,12 @@ export function IssueTable({
                         issues.map((issue, index) => (
                             <TableRow key={issue._id}>
                                 <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
-                                <TableCell className="font-medium">
-                                    {issue.testerId?.name || 'Unknown'}
-                                    <p className="text-xs text-muted-foreground">@{issue.testerId?.username}</p>
-                                </TableCell>
+                                {showTesterName && (
+                                    <TableCell className="font-medium">
+                                        {issue.testerId?.name || 'Unknown'}
+                                        <p className="text-xs text-muted-foreground">@{issue.testerId?.username}</p>
+                                    </TableCell>
+                                )}
                                 <TableCell className="font-medium">{issue.title}</TableCell>
                                 <TableCell className="max-w-[150px] truncate hidden md:table-cell">
                                     {issue.description}

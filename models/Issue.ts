@@ -8,7 +8,7 @@ export interface IIssue extends Document {
     media?: string; // URL to image/video
     severity?: 'Blocker' | 'Critical' | 'Major' | 'Normal' | 'Minor';
     leadComment?: string;
-    status: 'SUBMITTED' | 'VALIDATED' | 'NA';
+    status: 'NOT_VALIDATED' | 'VALIDATED' | 'NA';
     validatedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -28,8 +28,8 @@ const IssueSchema: Schema<IIssue> = new Schema(
         leadComment: { type: String },
         status: {
             type: String,
-            enum: ['SUBMITTED', 'VALIDATED', 'NA'],
-            default: 'SUBMITTED',
+            enum: ['NOT_VALIDATED', 'VALIDATED', 'NA'],
+            default: 'NOT_VALIDATED',
         },
         validatedAt: { type: Date },
     },
