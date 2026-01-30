@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { TestSessionModal } from '@/components/lead/TestSessionModal';
 
 interface Tester {
     _id: string;
@@ -36,9 +37,12 @@ export default function LeadDashboard() {
 
     return (
         <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Lead Dashboard</h1>
-                <p className="text-muted-foreground">Manage your testing team and activities.</p>
+            <div className="flex justify-between items-start">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Lead Dashboard</h1>
+                    <p className="text-muted-foreground">Manage your testing team and activities.</p>
+                </div>
+                <TestSessionModal />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

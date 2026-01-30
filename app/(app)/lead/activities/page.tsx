@@ -1,34 +1,40 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { TestSessionModal } from '@/components/lead/TestSessionModal';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { useSocket } from '@/components/providers/SocketProvider';
 
-interface Activity {
+interface TestSession {
     _id: string;
     title: string;
-    type: string;
-    status: string;
+    description: string;
+    scope: string[];
+    createdAt: string;
 }
 
 export default function LeadActivitiesPage() {
-    const [activities, setActivities] = useState<Activity[]>([]);
+    const [sessions, setSessions] = useState<TestSession[]>([]);
     const [loading, setLoading] = useState(true);
-
-    // Form state
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [type, setType] = useState('task');
-
-    const fetchActivities = async () => {
+    const { socket } = useSocket();
+    const router = useRouter();
+    const fetchSessions = async () => {
         try {
-            const res = await fetch('/api/activities');
+            const res = await fetch('/api/test-sessions');
             if (res.ok) {
-                setActivities(await res.json());
+                setSessions(await res.json());
             }
         } catch (e) {
             console.error(e);
@@ -38,113 +44,92 @@ export default function LeadActivitiesPage() {
     };
 
     useEffect(() => {
-        fetchActivities();
-    }, []);
+        fetchSessions();
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const res = await fetch('/api/activities', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, description, type }),
+        if (socket) {
+            socket.on('session-created', (newSession: TestSession) => {
+                setSessions((prev) => [newSession, ...prev]);
             });
-
-            if (res.ok) {
-                setTitle('');
-                setDescription('');
-                setType('task');
-                fetchActivities(); // Refresh list
-            }
-        } catch (e) {
-            console.error(e);
         }
-    };
+
+        return () => {
+            if (socket) socket.off('session-created');
+        };
+    }, [socket]);
 
     return (
         <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Manage Activities</h1>
-                <p className="text-muted-foreground">Create and monitor test activities.</p>
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Manage Activities</h1>
+                    <p className="text-muted-foreground">Create and monitor test sessions and issues.</p>
+                </div>
+                <TestSessionModal onSuccess={(newSession) => {
+                    fetchSessions();
+                    if (socket) socket.emit('new-session', newSession);
+                }} />
             </div>
 
-            <div className="grid gap-8 md:grid-cols-2">
-                {/* Create Activity Form */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Create New Activity</CardTitle>
-                        <CardDescription>Define a new task or milestone for testers.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleCreate} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="title">Title</Label>
-                                <Input
-                                    id="title"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    required
-                                    placeholder="e.g. Test Login Flow"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="type">Type</Label>
-                                <Select value={type} onValueChange={setType}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="task">Task</SelectItem>
-                                        <SelectItem value="milestone">Milestone</SelectItem>
-                                        <SelectItem value="event">Event</SelectItem>
-                                        <SelectItem value="project">Project</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="desc">Description</Label>
-                                <Textarea
-                                    id="desc"
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    placeholder="Details about the activity..."
-                                />
-                            </div>
-
-                            <Button type="submit">Create Activity</Button>
-                        </form>
-                    </CardContent>
-                </Card>
-
-                {/* List Activities */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Existing Activities</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <div>Loading...</div>
-                        ) : (
-                            <ul className="space-y-4">
-                                {activities.map((activity) => (
-                                    <li key={activity._id} className="border p-4 rounded-lg flex justify-between items-center">
-                                        <div>
-                                            <h4 className="font-semibold">{activity.title}</h4>
-                                            <div className="flex gap-2 text-xs text-muted-foreground mt-1">
-                                                <span className="bg-secondary px-2 py-0.5 rounded capitalize">{activity.type}</span>
-                                                <span className="bg-secondary px-2 py-0.5 rounded capitalize">{activity.status}</span>
-                                            </div>
-                                        </div>
-                                    </li>
-                                ))}
-                                {activities.length === 0 && <p className="text-muted-foreground">No activities found.</p>}
-                            </ul>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Test Sessions</CardTitle>
+                    <CardDescription>Click on a session to view submitted issues.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {loading ? (
+                        <div className="text-center py-8">Loading sessions...</div>
+                    ) : (
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Title</TableHead>
+                                        <TableHead>Scope</TableHead>
+                                        <TableHead>Created At</TableHead>
+                                        <TableHead className="text-right">Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {sessions.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                                                No test sessions found. Start by creating one!
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        sessions.map((session) => (
+                                            <TableRow
+                                                key={session._id}
+                                                className="cursor-pointer hover:bg-muted/50"
+                                                onClick={() => router.push(`/lead/activities/${session._id}`)}
+                                            >
+                                                <TableCell className="font-medium">
+                                                    {session.title}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex gap-1">
+                                                        {session.scope.map(s => (
+                                                            <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>
+                                                        ))}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-sm text-muted-foreground">
+                                                    {new Date(session.createdAt).toLocaleDateString()}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Link href={`/lead/activities/${session._id}`}>
+                                                        <Button variant="ghost" size="sm">View Issues</Button>
+                                                    </Link>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }
