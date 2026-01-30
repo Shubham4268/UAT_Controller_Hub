@@ -15,7 +15,7 @@ interface Activity {
     _id: string;
     title: string;
     description: string;
-    type: string;
+    scope: string;
     status: string;
 }
 
@@ -225,9 +225,9 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
                 </CardHeader>
                 <CardContent>
                     <div className="flex gap-2">
-                        {session.scope.map((s: string) => (
-                            <Badge key={s} variant="outline">{s}</Badge>
-                        ))}
+                        <Badge variant="outline">
+                            {session.scope === 'Both' ? 'Both (UI and Functional)' : session.scope}
+                        </Badge>
                     </div>
                 </CardContent>
             </Card>

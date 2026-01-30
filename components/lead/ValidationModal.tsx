@@ -89,7 +89,9 @@ export function ValidationModal({ issue, open, onOpenChange, onSuccess }: Valida
                 <div className="space-y-6 py-4">
                     <div className="space-y-2">
                         <h3 className="font-bold text-lg">{issue.title}</h3>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{issue.description}</p>
+                        <div className="max-h-[100px] overflow-y-auto pr-2 bg-muted/30 p-3 rounded-lg border border-dashed">
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{issue.description}</p>
+                        </div>
                     </div>
 
                     {issue.media && (

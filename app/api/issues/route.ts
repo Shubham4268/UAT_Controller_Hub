@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
         await connectDB();
 
         const body = await req.json();
-        const { sessionId, title, description, media } = body;
+        const { sessionId, title, description, media, deviceDetails, osVersion } = body;
 
         if (!sessionId || !title || !description) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
             title,
             description,
             media,
+            deviceDetails,
+            osVersion,
             status: 'NOT_VALIDATED',
         });
 

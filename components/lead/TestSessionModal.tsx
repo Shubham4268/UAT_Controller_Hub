@@ -31,13 +31,13 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Copy, Check } from 'lucide-react';
+import { Plus, Copy, Check, Monitor, Zap, Sparkles } from 'lucide-react';
 import { generateQRCodeUrl } from '@/utils/links';
 
 const formSchema = z.object({
     title: z.string().min(1, 'Title is required').max(100, 'Title must be under 100 chars'),
     description: z.string().min(1, 'Description is required'),
-    scope: z.array(z.string()).min(1, 'Select at least one scope'),
+    scope: z.string().min(1, 'Select a scope'),
     androidAppLink: z.string().url('Invalid URL').optional().or(z.literal('')),
     iosAppLink: z.string().url('Invalid URL').optional().or(z.literal('')),
 });
@@ -68,7 +68,7 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
         defaultValues: {
             title: '',
             description: '',
-            scope: [],
+            scope: 'Both',
             androidAppLink: '',
             iosAppLink: '',
         },
@@ -165,47 +165,50 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
                             <FormField
                                 control={form.control}
                                 name="scope"
-                                render={() => (
-                                    <FormItem>
+                                render={({ field }) => (
+                                    <FormItem className="space-y-3">
                                         <div className="mb-2">
                                             <FormLabel>Testing Scope</FormLabel>
                                             <FormDescription>Select what applies</FormDescription>
                                         </div>
-                                        <div className="flex flex-wrap gap-4">
-                                            {SCOPE_OPTIONS.map((item) => (
-                                                <FormField
-                                                    key={item}
-                                                    control={form.control}
-                                                    name="scope"
-                                                    render={({ field }) => {
-                                                        return (
-                                                            <FormItem
-                                                                key={item}
-                                                                className="flex flex-row items-center space-x-2 space-y-0"
-                                                            >
-                                                                <FormControl>
-                                                                    <Checkbox
-                                                                        checked={field.value?.includes(item)}
-                                                                        onCheckedChange={(checked) => {
-                                                                            return checked
-                                                                                ? field.onChange([...field.value, item])
-                                                                                : field.onChange(
-                                                                                    field.value?.filter(
-                                                                                        (value) => value !== item
-                                                                                    )
-                                                                                );
-                                                                        }}
-                                                                    />
-                                                                </FormControl>
-                                                                <FormLabel className="text-sm font-normal cursor-pointer">
-                                                                    {item === 'Both' ? 'Both (UI and Functional)' : item}
-                                                                </FormLabel>
-                                                            </FormItem>
-                                                        );
-                                                    }}
-                                                />
-                                            ))}
-                                        </div>
+                                        <FormControl>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                {[
+                                                    { id: 'UI', label: 'UI', icon: Monitor, desc: 'Visual & Layout' },
+                                                    { id: 'Functional', label: 'Functional', icon: Zap, desc: 'Logic & Flow' },
+                                                    { id: 'Both', label: 'Both', icon: Sparkles, desc: 'Full Sanity' }
+                                                ].map((item) => {
+                                                    const Icon = item.icon;
+                                                    const isSelected = field.value === item.id;
+                                                    return (
+                                                        <div
+                                                            key={item.id}
+                                                            onClick={() => field.onChange(item.id)}
+                                                            className={`relative flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 group ${isSelected
+                                                                    ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                                                                    : 'border-muted bg-card hover:border-muted-foreground/30 hover:bg-accent/50'
+                                                                }`}
+                                                        >
+                                                            <div className={`p-2 rounded-lg mb-2 transition-colors ${isSelected ? 'bg-primary text-white' : 'bg-muted text-muted-foreground group-hover:text-foreground'
+                                                                }`}>
+                                                                <Icon className="h-5 w-5" />
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <p className={`font-semibold text-sm ${isSelected ? 'text-primary' : ''}`}>
+                                                                    {item.id === 'Both' ? 'Both' : item.label}
+                                                                </p>
+                                                                <p className="text-[10px] text-muted-foreground line-clamp-1">{item.desc}</p>
+                                                            </div>
+                                                            {isSelected && (
+                                                                <div className="absolute top-2 right-2">
+                                                                    <div className="h-2 w-2 rounded-full bg-primary" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}

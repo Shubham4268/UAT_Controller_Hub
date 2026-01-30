@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface ITestSession extends Document {
     title: string;
     description: string;
-    scope: string[];
+    scope: string;
     iosLink: string;
     androidLink: string;
     androidAppLink?: string; // App download link
@@ -26,7 +26,7 @@ const TestSessionSchema: Schema<ITestSession> = new Schema(
         title: { type: String, required: true, maxlength: 100 },
         description: { type: String, required: true },
         scope: {
-            type: [String],
+            type: String,
             enum: ['UI', 'Functional', 'Both'],
             required: true,
         },

@@ -43,6 +43,8 @@ interface Issue {
     _id: string;
     title: string;
     description: string;
+    deviceDetails?: string;
+    osVersion?: string;
     media?: string;
     status: string;
     severity?: string;
@@ -74,7 +76,7 @@ export function IssueTable({
     showComment = false,
     hideAction = false,
     actionLabel = "Validate",
-    showTesterName = false
+    showTesterName = true
 }: IssueTableProps) {
     return (
         <div className="rounded-md border">
@@ -82,8 +84,9 @@ export function IssueTable({
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[60px]">S.No</TableHead>
-                        {showTesterName && <TableHead>Tester</TableHead>}
+                        {showTesterName && <TableHead>Created By</TableHead>}
                         <TableHead>Title</TableHead>
+                        <TableHead className="hidden md:table-cell">Device/OS</TableHead>
                         <TableHead className="hidden md:table-cell">Description</TableHead>
                         <TableHead>Media</TableHead>
                         <TableHead>Severity</TableHead>
@@ -111,6 +114,16 @@ export function IssueTable({
                                     </TableCell>
                                 )}
                                 <TableCell className="font-medium">{issue.title}</TableCell>
+                                <TableCell className="hidden md:table-cell text-xs">
+                                    {issue.deviceDetails ? (
+                                        <div className="flex flex-col">
+                                            <span>{issue.deviceDetails}</span>
+                                            <span className="text-muted-foreground">{issue.osVersion}</span>
+                                        </div>
+                                    ) : (
+                                        <span className="text-muted-foreground">—</span>
+                                    )}
+                                </TableCell>
                                 <TableCell className="max-w-[150px] truncate hidden md:table-cell">
                                     {issue.description}
                                 </TableCell>

@@ -3,18 +3,20 @@
 import { useEffect, useState, use } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { IssueSubmissionForm } from '@/components/tester/IssueSubmissionForm';
 import { IssueTable } from '@/components/common/IssueTable';
 import { AppQrSection } from '@/components/common/AppQrSection';
 import { useSocket } from '@/components/providers/SocketProvider';
-import { AlertCircle, PlayCircle, StopCircle, CheckCircle2, User, Users } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '../../../../../components/ui/alert';
+import { AlertCircle, PlayCircle, StopCircle, CheckCircle2, User, Users, Sparkles, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AIReviewModal } from '@/components/tester/AIReviewModal';
 
 interface Activity {
     _id: string;
     title: string;
     description: string;
-    type: string;
+    scope: string;
     status: string;
     metadata?: Record<string, any>;
 }
@@ -25,6 +27,7 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
     const [issues, setIssues] = useState<any[]>([]);
     const [user, setUser] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isAIReviewOpen, setIsAIReviewOpen] = useState(false);
     const { socket } = useSocket();
     const currentUserId = user?.userId;
 
@@ -80,6 +83,26 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
             }
         };
     }, [id, socket]);
+
+    const myIssues = issues.filter(iss => (iss.testerId?._id || iss.testerId) === currentUserId);
+    const pendingMyIssues = myIssues.filter(iss => iss.status === 'NOT_VALIDATED');
+
+    const handleAIProceed = async (issueId: string) => {
+        const issue = issues.find(iss => iss._id === issueId);
+        if (!issue) return true;
+
+        if (!issue.media) {
+            return false;
+        }
+        return true;
+    };
+
+    const handleAIMarkAsNA = async (issueId: string) => {
+        // Local only update as per requirements
+        setIssues(prev => prev.map(iss =>
+            iss._id === issueId ? { ...iss, status: 'NA' } : iss
+        ));
+    };
 
     if (loading) return <div>Loading details...</div>;
     if (!session) return <div>Session not found.</div>;
@@ -152,9 +175,9 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
                 <CardContent className="space-y-4">
                     <p className="text-sm whitespace-pre-wrap">{session.description || "No description provided."}</p>
                     <div className="flex gap-2">
-                        {session.scope?.map((s: string) => (
-                            <Badge key={s} variant="outline">{s}</Badge>
-                        ))}
+                        <Badge variant="outline">
+                            {session.scope === 'Both' ? 'Both (UI and Functional)' : session.scope}
+                        </Badge>
                     </div>
                 </CardContent>
             </Card>
@@ -168,10 +191,34 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
 
             <div className="space-y-12">
                 <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                        <User className="h-5 w-5 text-primary" />
-                        <h2 className="text-xl font-bold text-primary">My Reported Issues</h2>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <User className="h-5 w-5 text-primary" />
+                            <h2 className="text-xl font-bold text-primary">My Reported Issues</h2>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={myIssues.length === 0}
+                            onClick={() => setIsAIReviewOpen(true)}
+                            className="gap-2 border-purple-200 hover:bg-purple-50 hover:text-purple-700 text-purple-600 transition-all shadow-sm"
+                        >
+                            <Sparkles className="h-4 w-4" />
+                            AI Review
+                            {pendingMyIssues.length > 0 && (
+                                <Badge variant="secondary" className="ml-1 px-1.5 h-4 min-w-[16px] text-[10px] bg-purple-100 text-purple-700">
+                                    {pendingMyIssues.length}
+                                </Badge>
+                            )}
+                        </Button>
                     </div>
+                    <AIReviewModal
+                        open={isAIReviewOpen}
+                        onOpenChange={setIsAIReviewOpen}
+                        pendingIssues={pendingMyIssues}
+                        onProceed={handleAIProceed}
+                        onMarkAsNA={handleAIMarkAsNA}
+                    />
                     <IssueTable
                         issues={issues.filter(iss => (iss.testerId?._id || iss.testerId) === currentUserId)}
                         mode="tester"
@@ -182,14 +229,13 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
                 <div className="space-y-4 pt-8 border-t">
                     <div className="flex items-center gap-2">
                         <Users className="h-5 w-5 text-muted-foreground" />
-                        <h2 className="text-xl font-bold">Other Testers' Issues</h2>
+                        <h2 className="text-xl font-bold">All Session Issues</h2>
                     </div>
-                    <p className="text-sm text-muted-foreground">Context from peer-reported issues (view-only).</p>
+                    <p className="text-sm text-muted-foreground">Comprehensive log of all issues reported in this session.</p>
                     <IssueTable
-                        issues={issues.filter(iss => (iss.testerId?._id || iss.testerId) !== currentUserId)}
+                        issues={issues}
                         mode="tester"
                         showComment={true}
-                        showTesterName={true}
                     />
                 </div>
             </div>

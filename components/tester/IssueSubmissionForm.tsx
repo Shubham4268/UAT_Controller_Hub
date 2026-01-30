@@ -29,6 +29,8 @@ import { useSocket } from '@/components/providers/SocketProvider';
 const formSchema = z.object({
     title: z.string().min(1, 'Title is required'),
     description: z.string().min(1, 'Description is required'),
+    deviceDetails: z.string().min(1, 'Device details (e.g. iPhone 13) are required'),
+    osVersion: z.string().min(1, 'OS version (e.g. iOS 17.2) is required'),
     media: z.string().optional(),
 });
 
@@ -49,6 +51,8 @@ export function IssueSubmissionForm({ sessionId, onSuccess }: IssueSubmissionFor
         defaultValues: {
             title: '',
             description: '',
+            deviceDetails: '',
+            osVersion: '',
             media: '',
         },
     });
@@ -132,6 +136,34 @@ export function IssueSubmissionForm({ sessionId, onSuccess }: IssueSubmissionFor
                                 </FormItem>
                             )}
                         />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="deviceDetails"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Device Details</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="e.g. iPhone 15 Pro" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="osVersion"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>OS Version</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="e.g. iOS 17.4" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                         <FormField
                             control={form.control}
                             name="media"

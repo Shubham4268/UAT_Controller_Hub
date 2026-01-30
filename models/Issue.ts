@@ -7,6 +7,8 @@ export interface IIssue extends Document {
     description: string;
     media?: string; // URL to image/video
     severity?: 'Blocker' | 'Critical' | 'Major' | 'Normal' | 'Minor';
+    deviceDetails?: string;
+    osVersion?: string;
     leadComment?: string;
     status: 'NOT_VALIDATED' | 'VALIDATED' | 'NA';
     validatedAt?: Date;
@@ -20,6 +22,8 @@ const IssueSchema: Schema<IIssue> = new Schema(
         testerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         title: { type: String, required: true },
         description: { type: String, required: true },
+        deviceDetails: { type: String },
+        osVersion: { type: String },
         media: { type: String },
         severity: {
             type: String,
