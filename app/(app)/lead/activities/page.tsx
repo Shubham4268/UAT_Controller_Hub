@@ -22,6 +22,7 @@ interface TestSession {
     title: string;
     description: string;
     scope: string[];
+    status: 'ACTIVE' | 'STOPPED';
     createdAt: string;
 }
 
@@ -50,10 +51,17 @@ export default function LeadActivitiesPage() {
             socket.on('session-created', (newSession: TestSession) => {
                 setSessions((prev) => [newSession, ...prev]);
             });
+
+            socket.on('session:updated', (updatedSession: TestSession) => {
+                setSessions((prev) => prev.map(s => s._id === updatedSession._id ? updatedSession : s));
+            });
         }
 
         return () => {
-            if (socket) socket.off('session-created');
+            if (socket) {
+                socket.off('session-created');
+                socket.off('session:updated');
+            }
         };
     }, [socket]);
 
@@ -84,6 +92,7 @@ export default function LeadActivitiesPage() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Title</TableHead>
+                                        <TableHead>Status</TableHead>
                                         <TableHead>Scope</TableHead>
                                         <TableHead>Created At</TableHead>
                                         <TableHead className="text-right">Action</TableHead>
@@ -92,7 +101,7 @@ export default function LeadActivitiesPage() {
                                 <TableBody>
                                     {sessions.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                                            <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
                                                 No test sessions found. Start by creating one!
                                             </TableCell>
                                         </TableRow>
@@ -105,6 +114,11 @@ export default function LeadActivitiesPage() {
                                             >
                                                 <TableCell className="font-medium">
                                                     {session.title}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant={session.status === 'ACTIVE' ? 'success' : 'secondary'} className="text-[10px]">
+                                                        {session.status === 'ACTIVE' ? 'Active' : 'Stopped'}
+                                                    </Badge>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex gap-1">

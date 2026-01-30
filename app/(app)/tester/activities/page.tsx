@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useSocket } from '@/components/providers/SocketProvider';
 import Link from 'next/link';
 
 interface TestSession {
@@ -11,12 +12,14 @@ interface TestSession {
     title: string;
     description: string;
     scope: string[];
+    status: 'ACTIVE' | 'STOPPED';
     createdAt: string;
 }
 
 export default function TesterActivitiesPage() {
     const [sessions, setSessions] = useState<TestSession[]>([]);
     const [loading, setLoading] = useState(true);
+    const { socket } = useSocket();
 
     useEffect(() => {
         async function fetchSessions() {
@@ -32,7 +35,17 @@ export default function TesterActivitiesPage() {
             }
         }
         fetchSessions();
-    }, []);
+
+        if (socket) {
+            socket.on('session:updated', (updatedSession: TestSession) => {
+                setSessions((prev) => prev.map(s => s._id === updatedSession._id ? updatedSession : s));
+            });
+        }
+
+        return () => {
+            if (socket) socket.off('session:updated');
+        };
+    }, [socket]);
 
     return (
         <div className="space-y-8">
@@ -52,7 +65,10 @@ export default function TesterActivitiesPage() {
                     {sessions.map((session) => (
                         <Card key={session._id} className="flex flex-col border-2 hover:border-primary/20 transition-all">
                             <CardHeader>
-                                <div className="flex justify-end items-start">
+                                <div className="flex justify-between items-start">
+                                    <Badge variant={session.status === 'ACTIVE' ? 'success' : 'secondary'} className="text-[10px] h-5">
+                                        {session.status === 'ACTIVE' ? '● Active' : '● Stopped'}
+                                    </Badge>
                                     <span className="text-[10px] text-muted-foreground">
                                         {new Date(session.createdAt).toLocaleDateString()}
                                     </span>

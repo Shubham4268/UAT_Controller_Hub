@@ -42,13 +42,24 @@ export default function LeadDashboard() {
                     <h1 className="text-3xl font-bold tracking-tight">Lead Dashboard</h1>
                     <p className="text-muted-foreground">Manage your testing team and activities.</p>
                 </div>
-                <TestSessionModal />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="bg-primary/5 border-primary/10">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium">Total Testers</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{loading ? '...' : testers.length}</div>
+                        <p className="text-xs text-muted-foreground">Active in the system</p>
+                    </CardContent>
+                </Card>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Registered Testers</CardTitle>
+                        <CardTitle>Registered Testers Details</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {loading ? (

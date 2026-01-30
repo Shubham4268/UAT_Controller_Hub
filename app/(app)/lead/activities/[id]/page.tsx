@@ -8,6 +8,7 @@ import { IssueTable } from '@/components/common/IssueTable';
 import { ValidationModal } from '@/components/lead/ValidationModal';
 import { AppQrSection } from '@/components/common/AppQrSection';
 import { useSocket } from '@/components/providers/SocketProvider';
+import { Play, Square, Loader2 } from 'lucide-react';
 
 interface Activity {
     _id: string;
@@ -24,6 +25,7 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
     const [loading, setLoading] = useState(true);
     const [selectedIssue, setSelectedIssue] = useState<any | null>(null);
     const [isValidationOpen, setIsValidationOpen] = useState(false);
+    const [toggling, setToggling] = useState(false);
     const { socket } = useSocket();
 
     useEffect(() => {
@@ -57,12 +59,19 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
                     prev.map((iss) => (iss._id === updatedIssue._id ? updatedIssue : iss))
                 );
             });
+
+            socket.on('session:updated', (updatedSession: any) => {
+                if (updatedSession._id === id) {
+                    setSession(updatedSession);
+                }
+            });
         }
 
         return () => {
             if (socket) {
                 socket.off('issue:new');
                 socket.off('issue:refreshed');
+                socket.off('session:updated');
             }
         };
     }, [id, socket]);
@@ -81,6 +90,32 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
         }
     };
 
+    const handleToggleSession = async () => {
+        if (!session) return;
+        setToggling(true);
+        const newStatus = session.status === 'ACTIVE' ? 'STOPPED' : 'ACTIVE';
+        try {
+            const res = await fetch(`/api/test-sessions/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus }),
+            });
+
+            if (res.ok) {
+                const updated = await res.json();
+                setSession(updated);
+                if (socket) {
+                    socket.emit(newStatus === 'ACTIVE' ? 'session:started' : 'session:stopped', updated);
+                    socket.emit('session:updated', updated);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to toggle session', error);
+        } finally {
+            setToggling(false);
+        }
+    };
+
     const pendingIssues = issues.filter(iss => iss.status !== 'VALIDATED' && iss.status !== 'NA');
     const validatedIssues = issues.filter(iss => iss.status === 'VALIDATED' || iss.status === 'NA');
 
@@ -89,12 +124,41 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
 
     return (
         <div className="space-y-8">
-            <div className="flex justify-between items-start">
+            <div className="flex justify-between items-center bg-card p-4 border rounded-xl shadow-sm">
                 <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <h1 className="text-3xl font-bold tracking-tight">{session.title}</h1>
+                        <Badge variant={session.status === 'ACTIVE' ? 'success' : 'secondary'} className="h-6">
+                            {session.status === 'ACTIVE' ? '● Active' : '● Stopped'}
+                        </Badge>
                     </div>
-                    <p className="text-muted-foreground">Session monitoring and validation dashboard.</p>
+                    <p className="text-muted-foreground italic text-sm">
+                        {session.status === 'ACTIVE'
+                            ? `Started at ${new Date(session.startedAt).toLocaleTimeString()}`
+                            : 'This session is currently stopped.'}
+                    </p>
+                </div>
+                <div className="flex gap-2">
+                    {session.status === 'STOPPED' ? (
+                        <Button
+                            onClick={handleToggleSession}
+                            disabled={toggling}
+                            className="bg-green-600 hover:bg-green-700 gap-2 px-6"
+                        >
+                            {toggling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 fill-current" />}
+                            Start Session
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={handleToggleSession}
+                            variant="destructive"
+                            disabled={toggling}
+                            className="gap-2 px-6"
+                        >
+                            {toggling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="h-4 w-4 fill-current" />}
+                            Stop Session
+                        </Button>
+                    )}
                 </div>
             </div>
 
