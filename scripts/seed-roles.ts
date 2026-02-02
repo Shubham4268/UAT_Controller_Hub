@@ -37,7 +37,7 @@ const TESTER_USERS = [
 ];
 
 // Helper to build user objects
-function buildUser(username, role) {
+function buildUser(username: string, role: string) {
   return {
     name: username.replace('.', ' '),
     username,

@@ -72,7 +72,6 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
             title: '',
             description: '',
             scope: 'Both',
-            scope: 'Both',
             androidAppLink: '',
             iosAppLink: '',
             template: null,
@@ -190,8 +189,8 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
                                                             key={item.id}
                                                             onClick={() => field.onChange(item.id)}
                                                             className={`relative flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 group ${isSelected
-                                                                    ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                                                                    : 'border-muted bg-card hover:border-muted-foreground/30 hover:bg-accent/50'
+                                                                ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                                                                : 'border-muted bg-card hover:border-muted-foreground/30 hover:bg-accent/50'
                                                                 }`}
                                                         >
                                                             <div className={`p-2 rounded-lg mb-2 transition-colors ${isSelected ? 'bg-primary text-white' : 'bg-muted text-muted-foreground group-hover:text-foreground'

@@ -25,7 +25,7 @@ export async function GET() {
         }
 
         // Fetch fresh user data
-        const user = await User.findById(authUser.id);
+        const user = await User.findById(authUser.userId);
 
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -53,7 +53,7 @@ export async function PUT(request: Request) {
         const { role, password, username, ...updateData } = body;
 
         const updatedUser = await User.findByIdAndUpdate(
-            authUser.id,
+            authUser.userId,
             { $set: updateData },
             { new: true, runValidators: true }
         );
