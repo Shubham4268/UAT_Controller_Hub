@@ -40,6 +40,13 @@ const SEVERITY_VARIANTS: Record<string, "default" | "secondary" | "destructive" 
     Minor: 'outline',
 };
 
+const PRIORITY_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+    P0: 'destructive',
+    P1: 'destructive',
+    P2: 'default',
+    P3: 'secondary',
+};
+
 interface Issue {
     _id: string;
     title: string;
@@ -49,6 +56,7 @@ interface Issue {
     media?: string;
     status: string;
     severity?: string;
+    priority?: string;
     leadComment?: string;
     testerId: {
         name: string;
@@ -96,6 +104,7 @@ export function IssueTable({
                         <TableHead className="hidden md:table-cell">Description</TableHead>
                         <TableHead>Media</TableHead>
                         <TableHead>Severity</TableHead>
+                        <TableHead>Priority</TableHead>
                         {showComment && <TableHead>Comment</TableHead>}
                         {!hideStatus && <TableHead>Status</TableHead>}
                         <TableHead className="hidden lg:table-cell">Created At</TableHead>
@@ -105,7 +114,7 @@ export function IssueTable({
                 <TableBody>
                     {issues.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={10} className="text-center py-4 text-muted-foreground">
+                            <TableCell colSpan={11} className="text-center py-4 text-muted-foreground">
                                 No issues reported yet.
                             </TableCell>
                         </TableRow>
@@ -157,6 +166,15 @@ export function IssueTable({
                                     {issue.severity ? (
                                         <Badge variant={SEVERITY_VARIANTS[issue.severity] || 'outline'} className="text-[10px]">
                                             {issue.severity}
+                                        </Badge>
+                                    ) : (
+                                        <span className="text-xs text-muted-foreground">-</span>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {issue.priority ? (
+                                        <Badge variant={PRIORITY_VARIANTS[issue.priority] || 'outline'} className="text-[10px]">
+                                            {issue.priority}
                                         </Badge>
                                     ) : (
                                         <span className="text-xs text-muted-foreground">-</span>

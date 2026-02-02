@@ -12,6 +12,7 @@ import { AlertCircle, PlayCircle, StopCircle, CheckCircle2, User, Users, Sparkle
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AIReviewModal } from '@/components/tester/AIReviewModal';
 import { IssueDetailsModal } from '@/components/tester/IssueDetailsModal';
+import { toast } from 'sonner';
 
 interface Activity {
     _id: string;
@@ -91,6 +92,33 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
 
     const myIssues = issues.filter(iss => (iss.testerId?._id || iss.testerId) === currentUserId);
     const pendingMyIssues = myIssues.filter(iss => iss.status === 'NOT_VALIDATED');
+
+    // Dummy duplicate detection: Find similar issues based on title similarity
+    const findDuplicateIssue = (issue: any) => {
+        const otherIssues = issues.filter(iss => 
+            iss._id !== issue._id && 
+            (iss.testerId?._id || iss.testerId) !== currentUserId
+        );
+
+        // Simple similarity check: if titles share 3+ words, consider it a potential duplicate
+        const issueWords = issue.title.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+        
+        for (const other of otherIssues) {
+            const otherWords = other.title.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+            const commonWords = issueWords.filter((w: string) => otherWords.includes(w));
+            
+            if (commonWords.length >= 2) {
+                return other;
+            }
+        }
+        return null;
+    };
+
+    // Enrich pending issues with duplicate information
+    const pendingIssuesWithDuplicates = pendingMyIssues.map(issue => ({
+        ...issue,
+        duplicateIssue: findDuplicateIssue(issue)
+    })); // Show all pending issues, with or without duplicates
 
     const handleAIProceed = async (issueId: string) => {
         const issue = issues.find(iss => iss._id === issueId);
@@ -215,18 +243,35 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    disabled={myIssues.length === 0 || session.status === 'ACTIVE'}
+                                    disabled={myIssues.length === 0}
                                     onClick={(e) => {
                                         e.stopPropagation();
+                                        
+                                        // Check if session is active
+                                        if (session.status === 'ACTIVE') {
+                                            toast.error('Session is Active', {
+                                                description: 'AI Review is only available when the session is stopped. Please wait for the lead to stop the session.',
+                                            });
+                                            return;
+                                        }
+
+                                        // Check if all issues are validated
+                                        if (pendingIssuesWithDuplicates.length === 0) {
+                                            toast.info('All Issues Validated', {
+                                                description: 'All your reported issues have been validated. There are no pending issues to review.',
+                                            });
+                                            return;
+                                        }
+
                                         setIsAIReviewOpen(true);
                                     }}
                                     className="gap-2 h-7 text-xs border-purple-200 hover:bg-purple-50 hover:text-purple-700 text-purple-600 transition-all shadow-sm"
                                 >
                                     <Sparkles className="h-3 w-3" />
                                     AI Review
-                                    {pendingMyIssues.length > 0 && (
+                                    {pendingIssuesWithDuplicates.length > 0 && (
                                         <Badge variant="secondary" className="ml-1 px-1.5 h-3.5 min-w-[14px] text-[9px] bg-purple-100 text-purple-700">
-                                            {pendingMyIssues.length}
+                                            {pendingIssuesWithDuplicates.length}
                                         </Badge>
                                     )}
                                 </Button>
@@ -245,7 +290,7 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
                             <AIReviewModal
                                 open={isAIReviewOpen}
                                 onOpenChange={setIsAIReviewOpen}
-                                pendingIssues={pendingMyIssues}
+                                pendingIssues={pendingIssuesWithDuplicates}
                                 onProceed={handleAIProceed}
                                 onMarkAsNA={handleAIMarkAsNA}
                             />

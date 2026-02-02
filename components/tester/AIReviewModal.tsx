@@ -17,8 +17,18 @@ import { Badge } from '@/components/ui/badge';
 interface Issue {
     _id: string;
     title: string;
+    description?: string;
     media?: string;
     status: string;
+    duplicateIssue?: {
+        _id: string;
+        title: string;
+        description?: string;
+        testerId?: {
+            name: string;
+            username: string;
+        };
+    };
 }
 
 interface AIReviewModalProps {
@@ -115,18 +125,38 @@ export function AIReviewModal({
                         <div className="p-4 rounded-xl border bg-card/50">
                             <h4 className="font-semibold text-sm mb-1">Your Issue:</h4>
                             <p className="text-sm font-medium">{currentIssue.title}</p>
+                            {currentIssue.description && (
+                                <p className="text-xs text-muted-foreground mt-1">{currentIssue.description}</p>
+                            )}
                         </div>
-<div className="p-4 rounded-xl border bg-card/50">
-                            <h4 className="font-semibold text-sm mb-1">Duplicate Issue:</h4>
-                            <p className="text-sm font-medium">{currentIssue.title}</p>
-                        </div>
-                        <Alert variant="destructive" className="bg-amber-50 border-amber-200 text-amber-900">
-                            <AlertCircle className="h-4 w-4 text-amber-600" />
-                            <AlertTitle className="text-amber-800">Duplicate Suspected</AlertTitle>
-                            <AlertDescription className="text-amber-700">
-                                ⚠️ Your issue is similar to another issue already reported by a tester.
-                            </AlertDescription>
-                        </Alert>
+                        {currentIssue.duplicateIssue ? (
+                            <div className="p-4 rounded-xl border bg-amber-50/50 border-amber-200">
+                                <h4 className="font-semibold text-sm mb-1 text-amber-900">Potential Duplicate:</h4>
+                                <p className="text-sm font-medium text-amber-900">{currentIssue.duplicateIssue.title}</p>
+                                {currentIssue.duplicateIssue.description && (
+                                    <p className="text-xs text-amber-700 mt-1">{currentIssue.duplicateIssue.description}</p>
+                                )}
+                                {currentIssue.duplicateIssue.testerId && (
+                                    <p className="text-xs text-amber-600 mt-2">
+                                        Reported by: {currentIssue.duplicateIssue.testerId.name} (@{currentIssue.duplicateIssue.testerId.username})
+                                    </p>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="p-4 rounded-xl border bg-card/50">
+                                <h4 className="font-semibold text-sm mb-1">Duplicate Issue:</h4>
+                                <p className="text-sm font-medium">{currentIssue.title}</p>
+                            </div>
+                        )}
+                        {currentIssue.duplicateIssue && (
+                            <Alert variant="destructive" className="bg-amber-50 border-amber-200 text-amber-900">
+                                <AlertCircle className="h-4 w-4 text-amber-600" />
+                                <AlertTitle className="text-amber-800">Duplicate Suspected</AlertTitle>
+                                <AlertDescription className="text-amber-700">
+                                    ⚠️ Your issue is similar to another issue already reported by a tester.
+                                </AlertDescription>
+                            </Alert>
+                        )}
 
                         {error && (
                             <div className="flex items-center gap-2 text-xs text-destructive font-medium bg-destructive/5 p-2 rounded border border-destructive/20">
@@ -137,33 +167,24 @@ export function AIReviewModal({
                     </div>
                 </div>
 
-                <DialogFooter className="flex sm:justify-between gap-3">
+                <DialogFooter className="flex justify-end gap-2">
                     <Button
-                        variant="ghost"
-                        className="text-muted-foreground"
-                        onClick={() => onOpenChange(false)}
+                        variant="outline"
+                        onClick={handleMarkAsNA}
+                        disabled={loading}
+                        className="gap-2"
                     >
-                        Skip for now
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                        Mark as NA
                     </Button>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={handleMarkAsNA}
-                            disabled={loading}
-                            className="gap-2"
-                        >
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
-                            Mark as NA
-                        </Button>
-                        <Button
-                            onClick={handleProceed}
-                            disabled={loading}
-                            className="bg-purple-600 hover:bg-purple-700 gap-2"
-                        >
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            Proceed
-                        </Button>
-                    </div>
+                    <Button
+                        onClick={handleProceed}
+                        disabled={loading}
+                        className="bg-purple-600 hover:bg-purple-700 gap-2"
+                    >
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                        Proceed
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

@@ -243,55 +243,69 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
             />
 
             <div className="space-y-6">
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <Button 
-                            variant="ghost" 
-                            className="p-0 hover:bg-transparent -ml-2" 
-                            onClick={() => setShowPending(!showPending)}
-                        >
-                            <div className="flex items-center gap-2">
-                                <span className="text-xl font-bold">🧾 Issues To Be Validated ({pendingIssues.length})</span>
-                                {showPending ? <ChevronDown className="h-5 w-5 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 text-muted-foreground" />}
-                            </div>
-                        </Button>
-                    </div>
+                <Card className="overflow-hidden border-2 border-primary/10">
+                    <CardHeader 
+                        className="bg-primary/5 py-3 cursor-pointer select-none transition-colors hover:bg-primary/10"
+                        onClick={() => setShowPending(!showPending)}
+                    >
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                🧾 Issues To Be Validated ({pendingIssues.length})
+                            </CardTitle>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 w-6 p-0 hover:bg-transparent"
+                            >
+                                {showPending ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                    </CardHeader>
                     {showPending && (
-                        <IssueTable
-                            issues={pendingIssues}
-                            mode="lead"
-                            onValidate={handleValidate}
-                            hideStatus={true}
-                            showComment={true}
-                            actionLabel="Validate"
-                        />
+                        <CardContent className="p-6">
+                            <IssueTable
+                                issues={pendingIssues}
+                                mode="lead"
+                                onValidate={handleValidate}
+                                hideStatus={true}
+                                showComment={true}
+                                actionLabel="Validate"
+                            />
+                        </CardContent>
                     )}
-                </div>
+                </Card>
 
-                <div className="space-y-4 pt-4 border-t">
-                    <div className="flex items-center justify-between">
-                        <Button 
-                            variant="ghost" 
-                            className="p-0 hover:bg-transparent -ml-2" 
-                            onClick={() => setShowValidated(!showValidated)}
-                        >
-                            <div className="flex items-center gap-2">
-                                <span className="text-xl font-bold">✅ Validated / NA Issues ({validatedIssues.length})</span>
-                                {showValidated ? <ChevronDown className="h-5 w-5 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 text-muted-foreground" />}
-                            </div>
-                        </Button>
-                    </div>
+                <Card className="overflow-hidden border-2 border-primary/10">
+                    <CardHeader 
+                        className="bg-primary/5 py-3 cursor-pointer select-none transition-colors hover:bg-primary/10"
+                        onClick={() => setShowValidated(!showValidated)}
+                    >
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                ✅ Validated / NA Issues ({validatedIssues.length})
+                            </CardTitle>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 w-6 p-0 hover:bg-transparent"
+                            >
+                                {showValidated ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                    </CardHeader>
                     {showValidated && (
-                        <IssueTable
-                            issues={validatedIssues}
-                            mode="lead"
-                            onValidate={handleValidate}
-                            hideStatus={true}
-                            showComment={true}
-                            actionLabel="Revalidate"
-                        />
+                        <CardContent className="p-6">
+                            <IssueTable
+                                issues={validatedIssues}
+                                mode="lead"
+                                onValidate={handleValidate}
+                                hideStatus={true}
+                                showComment={true}
+                                actionLabel="Revalidate"
+                            />
+                        </CardContent>
                     )}
-                </div>
+                </Card>
             </div>
 
             <ValidationModal

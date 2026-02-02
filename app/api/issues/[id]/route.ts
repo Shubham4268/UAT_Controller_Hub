@@ -18,7 +18,7 @@ export async function PATCH(
         await connectDB();
 
         const body = await req.json();
-        const { status, severity, leadComment, title, description } = body;
+        const { status, severity, priority, leadComment, title, description } = body;
 
         const issue = await Issue.findById(id);
         if (!issue) {
@@ -32,6 +32,7 @@ export async function PATCH(
         }
 
         if (severity) issue.severity = severity;
+        if (priority !== undefined) issue.priority = priority || undefined;
         if (leadComment !== undefined) issue.leadComment = leadComment;
 
         // Optionally allow updating title/description if Lead needs to clarify

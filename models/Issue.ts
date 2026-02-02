@@ -6,7 +6,8 @@ export interface IIssue extends Document {
     title: string;
     description: string;
     media?: string; // URL to image/video
-    severity?: 'Blocker' | 'Critical' | 'Major' | 'Normal' | 'Minor';
+    severity?: 'Blocker' | 'Critical' | 'Major' | 'Normal' | 'Minor' | 'NA';
+    priority?: 'P0' | 'P1' | 'P2' | 'P3';
     deviceDetails?: string;
     osVersion?: string;
     leadComment?: string;
@@ -29,7 +30,11 @@ const IssueSchema: Schema<IIssue> = new Schema(
         media: { type: String },
         severity: {
             type: String,
-            enum: ['Blocker', 'Critical', 'Major', 'Normal', 'Minor'],
+            enum: ['Blocker', 'Critical', 'Major', 'Normal', 'Minor', 'NA'],
+        },
+        priority: {
+            type: String,
+            enum: ['P0', 'P1', 'P2', 'P3'],
         },
         leadComment: { type: String },
         status: {
