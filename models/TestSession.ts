@@ -11,6 +11,19 @@ export interface ITestSession extends Document {
     androidQr?: string;      // QR code URL or base64
     iosQr?: string;          // QR code URL or base64
     token: string;
+    // Template definition for issues in this session
+    template: {
+        id: string;
+        name: string;
+        fields: Array<{
+            key: string;
+            label: string;
+            type: string;
+            required?: boolean;
+            placeholder?: string;
+            options?: string[];
+        }>;
+    };
     status: 'ACTIVE' | 'STOPPED';
     completionStatus: 'ACTIVE' | 'COMPLETED';
     startedAt?: Date;
@@ -37,6 +50,18 @@ const TestSessionSchema: Schema<ITestSession> = new Schema(
         androidQr: { type: String },
         iosQr: { type: String },
         token: { type: String, required: true, unique: true },
+        template: {
+            id: { type: String, required: true },
+            name: { type: String, required: true },
+            fields: [{
+                key: { type: String, required: true },
+                label: { type: String, required: true },
+                type: { type: String, required: true },
+                required: { type: Boolean, default: false },
+                placeholder: { type: String },
+                options: [{ type: String }]
+            }]
+        },
         status: {
             type: String,
             enum: ['ACTIVE', 'STOPPED'],
