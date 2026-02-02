@@ -20,9 +20,12 @@ import { Input } from '@/components/ui/input';
 // Zod schema for login form validation
 const loginSchema = z.object({
   username: z
-    .string()
-    .min(1, 'Username is required')
-    .regex(/^[A-Za-z]+\.[A-Za-z]+$/, 'Username must be in format First.Last (e.g., John.Doe)'),
+  .string()
+  .min(1, 'Username is required')
+  .regex(
+    /^[A-Za-z0-9]+\.[A-Za-z0-9]+$/,
+    'Username must be in format First.Last (letters and numbers allowed, e.g., John1.Doe2)'
+  ),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')

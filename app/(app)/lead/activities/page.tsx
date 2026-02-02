@@ -23,7 +23,7 @@ interface TestSession {
     _id: string;
     title: string;
     description: string;
-    scope: string[];
+    scope: string;
     status: 'ACTIVE' | 'STOPPED';
     completionStatus: 'ACTIVE' | 'COMPLETED';
     createdAt: string;

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
         await connectDB();
 
         const body = await req.json();
-        const { title, description, scope, androidAppLink, iosAppLink } = body;
+        const { title, description, scope, androidAppLink, iosAppLink, template } = body;
 
         if (!title || title.length > 100) {
             return NextResponse.json({ error: 'Invalid title' }, { status: 400 });
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
             androidQr,
             iosQr,
             token,
+            template, // Save the full template definition
             createdBy: session.userId,
         });
 

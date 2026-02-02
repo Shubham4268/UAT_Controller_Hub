@@ -33,6 +33,8 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Copy, Check, Monitor, Zap, Sparkles } from 'lucide-react';
 import { generateQRCodeUrl } from '@/utils/links';
+import { TemplateBuilder } from './TemplateBuilder';
+import { IssueTemplate } from '@/config/templates';
 
 const formSchema = z.object({
     title: z.string().min(1, 'Title is required').max(100, 'Title must be under 100 chars'),
@@ -40,6 +42,7 @@ const formSchema = z.object({
     scope: z.string().min(1, 'Select a scope'),
     androidAppLink: z.string().url('Invalid URL').optional().or(z.literal('')),
     iosAppLink: z.string().url('Invalid URL').optional().or(z.literal('')),
+    template: z.any(), // Validated by TemplateBuilder
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -69,8 +72,10 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
             title: '',
             description: '',
             scope: 'Both',
+            scope: 'Both',
             androidAppLink: '',
             iosAppLink: '',
+            template: null,
         },
     });
 
@@ -243,6 +248,14 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
                                 />
                             </div>
 
+                            <FormField
+                                control={form.control}
+                                name="template"
+                                render={({ field }) => (
+                                    <TemplateBuilder onChange={field.onChange} />
+                                )}
+                            />
+
                             <div className="flex justify-end gap-3 pt-4">
                                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                                     Cancel
@@ -257,7 +270,7 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
                     <div className="space-y-6 py-4">
                         <div className="space-y-2">
                             <h3 className="font-semibold text-lg">{createdSession?.title}</h3>
-                            <p className="text-sm text-muted-foreground">Session Token: <code className="bg-muted px-1 rounded">{createdSession?.token}</code></p>
+                            {/* <p className="text-sm text-muted-foreground">Session Token: <code className="bg-muted px-1 rounded">{createdSession?.token}</code></p> */}
                         </div>
 
                         <div className="grid grid-cols-2 gap-8">

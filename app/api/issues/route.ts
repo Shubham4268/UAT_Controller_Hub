@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
         await connectDB();
 
         const body = await req.json();
-        const { sessionId, title, description, media, deviceDetails, osVersion } = body;
+        const { sessionId, title, description, media, deviceDetails, osVersion, dynamicData } = body;
 
         if (!sessionId || !title || !description) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
             deviceDetails,
             osVersion,
             status: 'NOT_VALIDATED',
+            dynamicData,
         });
 
         const populatedIssue = await Issue.findById(issue._id).populate('testerId', 'name username image');

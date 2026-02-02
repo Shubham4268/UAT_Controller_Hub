@@ -116,7 +116,10 @@ export function AIReviewModal({
                             <h4 className="font-semibold text-sm mb-1">Your Issue:</h4>
                             <p className="text-sm font-medium">{currentIssue.title}</p>
                         </div>
-
+<div className="p-4 rounded-xl border bg-card/50">
+                            <h4 className="font-semibold text-sm mb-1">Duplicate Issue:</h4>
+                            <p className="text-sm font-medium">{currentIssue.title}</p>
+                        </div>
                         <Alert variant="destructive" className="bg-amber-50 border-amber-200 text-amber-900">
                             <AlertCircle className="h-4 w-4 text-amber-600" />
                             <AlertTitle className="text-amber-800">Duplicate Suspected</AlertTitle>

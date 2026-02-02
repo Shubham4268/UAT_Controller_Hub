@@ -11,6 +11,8 @@ export interface IIssue extends Document {
     osVersion?: string;
     leadComment?: string;
     status: 'NOT_VALIDATED' | 'VALIDATED' | 'NA';
+    // Dynamic fields data based on template
+    dynamicData?: Record<string, any>;
     validatedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -35,6 +37,7 @@ const IssueSchema: Schema<IIssue> = new Schema(
             enum: ['NOT_VALIDATED', 'VALIDATED', 'NA'],
             default: 'NOT_VALIDATED',
         },
+        dynamicData: { type: Map, of: Schema.Types.Mixed },
         validatedAt: { type: Date },
     },
     { timestamps: true }

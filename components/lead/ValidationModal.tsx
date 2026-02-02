@@ -25,9 +25,26 @@ interface ValidationModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess: (updatedIssue: any) => void;
+    onNext?: () => void;
+    onPrevious?: () => void;
+    hasNext?: boolean;
+    hasPrevious?: boolean;
+    currentIndex?: number;
+    totalCount?: number;
 }
 
-export function ValidationModal({ issue, open, onOpenChange, onSuccess }: ValidationModalProps) {
+export function ValidationModal({ 
+    issue, 
+    open, 
+    onOpenChange, 
+    onSuccess,
+    onNext,
+    onPrevious,
+    hasNext,
+    hasPrevious,
+    currentIndex,
+    totalCount
+}: ValidationModalProps) {
     const [loading, setLoading] = useState(false);
     const [severity, setSeverity] = useState<string>('Normal');
     const [comment, setComment] = useState<string>('');
@@ -63,7 +80,22 @@ export function ValidationModal({ issue, open, onOpenChange, onSuccess }: Valida
             if (res.ok) {
                 const updated = await res.json();
                 onSuccess(updated);
-                onOpenChange(false);
+                // Do not close modal here if we want to continue validating
+                // But the requirement says "Submit still validates current active issue". 
+                // Usually validation implies done. 
+                // If the user wants to continue "without closing", they might use Next/Prev.
+                // However, submitting might auto-advance? The prompt didn't strictly say auto-advance on submit,
+                // but "Clicking them switches issue without closing modal".
+                // Let's close on submit for now as per original behavior, unless we want to auto-next.
+                // The prompt says "No backend changes required. Navigation limited to Issues To Be Validated table."
+                // "Submit still validates current active issue."
+                // "Allows Leads to navigate... so multiple issues can be validated continuously without closing the modal."
+                // This implies they can view -> next -> view -> next. 
+                // But VALIDATION removes it from the "Pending" list usually?
+                // If I validate issue A, it goes to "Validated". The index in "Pending" shifts.
+                // This is tricky. If I validate, the list changes.
+                // For now let's keep close on submit to be safe, or just call onSuccess and let parent handle closure/next.
+                onOpenChange(false); 
             }
         } catch (e) {
             console.error(e);
@@ -74,22 +106,52 @@ export function ValidationModal({ issue, open, onOpenChange, onSuccess }: Valida
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle className="flex justify-between items-center">
-                        <span>Validate Issue</span>
-                        <Badge variant={issue.status === 'VALIDATED' ? 'secondary' : issue.status === 'NA' ? 'outline' : 'default'}>
-                            {issue.status === 'SUBMITTED' ? 'Not Validated' : issue.status === 'VALIDATED' ? 'Validated' : 'N/A'}
-                        </Badge>
-                    </DialogTitle>
-                    <DialogDescription>
-                        Review and set the severity and comments for this reported issue.
-                    </DialogDescription>
+                    <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                            <DialogTitle className="flex items-center gap-2">
+                                <span>Validate Issue</span>
+                                <Badge variant={issue.status === 'VALIDATED' ? 'secondary' : issue.status === 'NA' ? 'outline' : 'default'}>
+                                    {issue.status === 'SUBMITTED' ? 'Not Validated' : issue.status === 'VALIDATED' ? 'Validated' : 'N/A'}
+                                </Badge>
+                            </DialogTitle>
+                            {(currentIndex !== undefined && totalCount !== undefined) && (
+                                <p className="text-sm text-muted-foreground">
+                                    Issue {currentIndex + 1} of {totalCount}
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                             {/* Navigation Buttons in Header for easy access */}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={onPrevious}
+                                disabled={!hasPrevious}
+                                title="Previous Issue"
+                            >
+                                ⬅
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={onNext}
+                                disabled={!hasNext}
+                                title="Next Issue"
+                            >
+                                ➡
+                            </Button>
+                        </div>
+                    </div>
                 </DialogHeader>
                 <div className="space-y-6 py-4">
                     <div className="space-y-2">
-                        <h3 className="font-bold text-lg">{issue.title}</h3>
-                        <div className="max-h-[100px] overflow-y-auto pr-2 bg-muted/30 p-3 rounded-lg border border-dashed">
+                        <div className="flex justify-between items-start gap-4">
+                             <h3 className="font-bold text-lg leading-tight">{issue.title}</h3>
+                             <Badge variant="outline" className="shrink-0">{issue.deviceDetails || 'Unknown Device'}</Badge>
+                        </div>
+                        <div className="max-h-[150px] overflow-y-auto pr-2 bg-muted/30 p-3 rounded-lg border border-dashed">
                             <p className="text-sm text-muted-foreground whitespace-pre-wrap">{issue.description}</p>
                         </div>
                     </div>
@@ -97,27 +159,32 @@ export function ValidationModal({ issue, open, onOpenChange, onSuccess }: Valida
                     {issue.media && (
                         <div className="space-y-2">
                             <Label>Tester Media</Label>
-                            <div className="border rounded-md overflow-hidden bg-muted">
+                            <div className="border rounded-md overflow-hidden bg-muted group relative">
                                 <img
                                     src={issue.media}
                                     alt="Issue Media"
-                                    className="w-full max-h-[300px] object-contain"
+                                    className="w-full max-h-[300px] object-contain bg-black/5"
                                     onError={(e) => (e.currentTarget.style.display = 'none')}
                                 />
-                                <div className="p-2 text-center text-xs">
-                                    <a href={issue.media} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
-                                        View full size
-                                    </a>
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/10 transition-opacity pointer-events-none">
+                                     <a 
+                                        href={issue.media} 
+                                        target="_blank" 
+                                        rel="noreferrer" 
+                                        className="bg-background/80 text-foreground px-3 py-1 rounded-full text-xs font-medium pointer-events-auto hover:bg-background"
+                                     >
+                                        Open Full Size
+                                     </a>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 gap-4">
+                    <div className="grid grid-cols-1 gap-4 bg-accent/20 p-4 rounded-xl border">
                         <div className="space-y-2">
-                            <Label>Severity (Required for Validation)</Label>
+                            <Label className="text-primary font-semibold">Set Severity</Label>
                             <Select value={severity} onValueChange={setSeverity}>
-                                <SelectTrigger>
+                                <SelectTrigger className="bg-background">
                                     <SelectValue placeholder="Select severity..." />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -141,26 +208,52 @@ export function ValidationModal({ issue, open, onOpenChange, onSuccess }: Valida
                         />
                     </div>
 
-                    <div className="flex justify-between items-center pt-4">
+                    <div className="flex flex-col-reverse sm:flex-row justify-between items-center pt-4 gap-4">
                         <Button
                             variant="outline"
-                            className="text-destructive border-destructive hover:bg-destructive/10"
+                            className="w-full sm:w-auto text-destructive border-destructive hover:bg-destructive/10"
                             onClick={() => handleSubmit('NA')}
-                            disabled={loading || !comment.trim()} // Mandatory for NA
+                            disabled={loading || !comment.trim()}
                         >
                             Mark as NA {!comment.trim() && '(add comment)'}
                         </Button>
-                        <div className="flex gap-3">
-                            <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                        <div className="flex gap-3 w-full sm:w-auto">
+                            <Button variant="ghost" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">Cancel</Button>
                             <Button
                                 onClick={() => handleSubmit('VALIDATED')}
                                 disabled={loading}
+                                className="flex-1 sm:flex-none"
                             >
                                 {loading ? 'Submitting...' : 'Submit Validation'}
                             </Button>
                         </div>
                     </div>
                 </div>
+                
+                {/* Footer Navigation (redundant but requested in footer too/alternatively) - sticking to header for visibility as per my design choice, but let's add simple arrows next to submit if needed. The prompt suggested "Footer, beside Submit button". Let's do that for better UX flow. */}
+                 <div className="flex justify-between items-center pt-4 border-t mt-4 text-xs text-muted-foreground">
+                    <div>
+                        {hasPrevious ? (
+                            <span 
+                                className="cursor-pointer hover:text-foreground flex items-center gap-1"
+                                onClick={onPrevious}
+                            >
+                                ⬅ Previous Issue
+                            </span>
+                        ) : <span className="opacity-30">⬅ Previous Issue</span>}
+                    </div>
+                     <div>
+                        {hasNext ? (
+                            <span 
+                                className="cursor-pointer hover:text-foreground flex items-center gap-1"
+                                onClick={onNext}
+                            >
+                                Next Issue ➡
+                            </span>
+                        ) : <span className="opacity-30">Next Issue ➡</span>}
+                    </div>
+                </div>
+
             </DialogContent>
         </Dialog>
     );

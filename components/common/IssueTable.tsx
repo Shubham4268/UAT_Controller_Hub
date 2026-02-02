@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { MediaPreviewModal } from './MediaPreviewModal';
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     NOT_VALIDATED: 'secondary',
@@ -55,12 +56,14 @@ interface Issue {
     };
     createdAt: string;
     validatedAt?: string; // Added validatedAt to interface
+    dynamicData?: Record<string, any>;
 }
 
 interface IssueTableProps {
     issues: Issue[];
     mode: 'tester' | 'lead';
     onValidate?: (issue: Issue) => void;
+    onView?: (issue: Issue) => void;
     hideStatus?: boolean;
     showComment?: boolean;
     hideAction?: boolean;
@@ -72,12 +75,15 @@ export function IssueTable({
     issues,
     mode,
     onValidate,
+    onView,
     hideStatus = false,
     showComment = false,
     hideAction = false,
     actionLabel = "Validate",
     showTesterName = true
 }: IssueTableProps) {
+    const [previewMedia, setPreviewMedia] = useState<string | null>(null);
+
     return (
         <div className="rounded-md border">
             <Table>
@@ -129,7 +135,10 @@ export function IssueTable({
                                 </TableCell>
                                 <TableCell>
                                     {issue.media ? (
-                                        <a href={issue.media} target="_blank" rel="noreferrer" className="flex items-center justify-center w-8 h-8 rounded border bg-muted hover:bg-muted/80 overflow-hidden">
+                                        <button 
+                                            onClick={() => setPreviewMedia(issue.media || null)}
+                                            className="flex items-center justify-center w-8 h-8 rounded border bg-muted hover:bg-muted/80 overflow-hidden cursor-pointer transition-colors"
+                                        >
                                             <img
                                                 src={issue.media}
                                                 alt="Media"
@@ -139,7 +148,7 @@ export function IssueTable({
                                                     e.currentTarget.parentElement!.innerHTML = '<span class="text-[10px]">🖼️</span>';
                                                 }}
                                             />
-                                        </a>
+                                        </button>
                                     ) : (
                                         <span className="text-xs text-muted-foreground">—</span>
                                     )}
@@ -175,7 +184,29 @@ export function IssueTable({
                                                 {actionLabel}
                                             </Button>
                                         ) : (
-                                            <span className="text-xs text-muted-foreground">View Only</span>
+                                            onView ? (
+                                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onView(issue)}>
+                                                    <span className="sr-only">View</span>
+                                                    {/* Importing Eye icon here to avoid top-level import conflict if needed, or assume it's imported */}
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="16"
+                                                        height="16"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        className="lucide lucide-eye"
+                                                    >
+                                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                                        <circle cx="12" cy="12" r="3" />
+                                                    </svg>
+                                                </Button>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground">View Only</span>
+                                            )
                                         )}
                                     </TableCell>
                                 )}
@@ -184,6 +215,11 @@ export function IssueTable({
                     )}
                 </TableBody>
             </Table>
+            <MediaPreviewModal 
+                open={!!previewMedia} 
+                url={previewMedia} 
+                onOpenChange={(open) => !open && setPreviewMedia(null)} 
+            />
         </div>
     );
 }

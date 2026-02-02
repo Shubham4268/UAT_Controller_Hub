@@ -9,7 +9,7 @@ import { ValidationModal } from '@/components/lead/ValidationModal';
 import { AppQrSection } from '@/components/common/AppQrSection';
 import { useSocket } from '@/components/providers/SocketProvider';
 import { CompletionConfirmModal } from '@/components/lead/CompletionConfirmModal';
-import { Play, Square, Loader2, CheckCircle2 } from 'lucide-react';
+import { Play, Square, Loader2, CheckCircle2, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface Activity {
     _id: string;
@@ -28,6 +28,8 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
     const [isValidationOpen, setIsValidationOpen] = useState(false);
     const [toggling, setToggling] = useState(false);
     const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+    const [showPending, setShowPending] = useState(true);
+    const [showValidated, setShowValidated] = useState(true);
     const { socket } = useSocket();
 
     useEffect(() => {
@@ -135,6 +137,7 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
             if (res.ok) {
                 const updated = await res.json();
                 setSession(updated);
+                setIsCompleteModalOpen(false);
                 if (socket) {
                     socket.emit('session:completed', updated);
                     socket.emit('session:updated', updated);
@@ -242,32 +245,52 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
             <div className="space-y-6">
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold">🧾 Issues To Be Validated</h2>
-                        <Badge variant="outline">{pendingIssues.length} Pending</Badge>
+                        <Button 
+                            variant="ghost" 
+                            className="p-0 hover:bg-transparent -ml-2" 
+                            onClick={() => setShowPending(!showPending)}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="text-xl font-bold">🧾 Issues To Be Validated ({pendingIssues.length})</span>
+                                {showPending ? <ChevronDown className="h-5 w-5 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 text-muted-foreground" />}
+                            </div>
+                        </Button>
                     </div>
-                    <IssueTable
-                        issues={pendingIssues}
-                        mode="lead"
-                        onValidate={handleValidate}
-                        hideStatus={true}
-                        showComment={true}
-                        actionLabel="Validate"
-                    />
+                    {showPending && (
+                        <IssueTable
+                            issues={pendingIssues}
+                            mode="lead"
+                            onValidate={handleValidate}
+                            hideStatus={true}
+                            showComment={true}
+                            actionLabel="Validate"
+                        />
+                    )}
                 </div>
 
                 <div className="space-y-4 pt-4 border-t">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold">✅ Validated / NA Issues</h2>
-                        <Badge variant="outline">{validatedIssues.length} Completed</Badge>
+                        <Button 
+                            variant="ghost" 
+                            className="p-0 hover:bg-transparent -ml-2" 
+                            onClick={() => setShowValidated(!showValidated)}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="text-xl font-bold">✅ Validated / NA Issues ({validatedIssues.length})</span>
+                                {showValidated ? <ChevronDown className="h-5 w-5 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 text-muted-foreground" />}
+                            </div>
+                        </Button>
                     </div>
-                    <IssueTable
-                        issues={validatedIssues}
-                        mode="lead"
-                        onValidate={handleValidate}
-                        hideStatus={true}
-                        showComment={true}
-                        actionLabel="Revalidate"
-                    />
+                    {showValidated && (
+                        <IssueTable
+                            issues={validatedIssues}
+                            mode="lead"
+                            onValidate={handleValidate}
+                            hideStatus={true}
+                            showComment={true}
+                            actionLabel="Revalidate"
+                        />
+                    )}
                 </div>
             </div>
 
@@ -276,6 +299,22 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
                 open={isValidationOpen}
                 onOpenChange={setIsValidationOpen}
                 onSuccess={onValidationSuccess}
+                currentIndex={pendingIssues.findIndex(iss => iss._id === selectedIssue?._id)}
+                totalCount={pendingIssues.length}
+                hasNext={pendingIssues.findIndex(iss => iss._id === selectedIssue?._id) < pendingIssues.length - 1}
+                hasPrevious={pendingIssues.findIndex(iss => iss._id === selectedIssue?._id) > 0}
+                onNext={() => {
+                    const currentIndex = pendingIssues.findIndex(iss => iss._id === selectedIssue?._id);
+                    if (currentIndex < pendingIssues.length - 1) {
+                        setSelectedIssue(pendingIssues[currentIndex + 1]);
+                    }
+                }}
+                onPrevious={() => {
+                    const currentIndex = pendingIssues.findIndex(iss => iss._id === selectedIssue?._id);
+                    if (currentIndex > 0) {
+                        setSelectedIssue(pendingIssues[currentIndex - 1]);
+                    }
+                }}
             />
 
             <CompletionConfirmModal

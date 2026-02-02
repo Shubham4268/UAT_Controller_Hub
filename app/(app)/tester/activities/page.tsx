@@ -11,7 +11,7 @@ interface TestSession {
     _id: string;
     title: string;
     description: string;
-    scope: string[];
+    scope: string;
     status: 'ACTIVE' | 'STOPPED';
     completionStatus: 'ACTIVE' | 'COMPLETED';
     createdAt: string;
@@ -93,7 +93,7 @@ export default function TesterActivitiesPage() {
                                     </div>
                                     <CardTitle className="leading-tight text-xl mt-2">{session.title}</CardTitle>
                                     <div className="flex flex-wrap gap-1 mt-2">
-                                        {session.scope?.map(s => (
+                                        {(session.scope === 'Both' ? ['UI', 'Functional'] : [session.scope]).map(s => (
                                             <Badge key={s} variant="outline" className="text-[9px] font-normal">{s}</Badge>
                                         ))}
                                     </div>
