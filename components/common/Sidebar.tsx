@@ -30,9 +30,17 @@ const leadNavigationItems: NavItem[] = [
     label: 'Lead Dashboard',
     href: '/lead/dashboard',
   },
+  
   {
     label: 'Manage Activities',
     href: '/lead/activities',
+  },{
+    label: 'Activities',
+    href: '/lead/my-activities',
+  },
+  {
+    label: 'My Profile',
+    href: '/profile',
   },
 ];
 
@@ -43,7 +51,7 @@ const testerNavigationItems: NavItem[] = [
   },
   {
     label: 'My Profile',
-    href: '/tester/profile',
+    href: '/profile',
   },
 ];
 
@@ -84,9 +92,10 @@ export function Sidebar({ userRole }: SidebarProps) {
   return (
     <aside className="w-60 border-r bg-card h-screen flex flex-col">
       {/* App branding */}
-      <div className="p-6 border-b">
-        <h1 className="text-xl font-semibold">Teamboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">Internal Dashboard</p>
+      <div className="p-[18px] border-b">
+        <Link href="/dashboard">
+          <h1 className="text-xl font-semibold cursor-pointer hover:opacity-80 transition-opacity">UAT Controller Hub</h1>
+        </Link>
       </div>
 
       {/* Main navigation */}

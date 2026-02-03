@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { MediaPreviewModal } from './MediaPreviewModal';
+import { TruncatedText } from './TruncatedText';
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
     NOT_VALIDATED: 'secondary',
@@ -26,14 +27,16 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | 
     NA: 'outline',
     REVIEW_REQUESTED: 'destructive', // Use distinctive color
     REVIEWED: 'default', // AI-reviewed with media
+    EDITED: 'secondary', // Tester edited, pending validation
 };
 
 const STATUS_LABELS: Record<string, string> = {
-    NOT_VALIDATED: 'Not Validated',
+    NOT_VALIDATED: 'Pending Review', // Changed text for clarity
     VALIDATED: 'Validated',
     NA: 'N/A',
-    REVIEW_REQUESTED: 'Edit Requested',
+    REVIEW_REQUESTED: 'Review Requested',
     REVIEWED: 'AI Reviewed',
+    EDITED: 'Edited',
 };
 
 const SEVERITY_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -58,11 +61,12 @@ interface Issue {
     deviceDetails?: string;
     osVersion?: string;
     media?: string;
-    status: 'NOT_VALIDATED' | 'VALIDATED' | 'NA' | 'REVIEW_REQUESTED' | 'REVIEWED';
+    status: 'NOT_VALIDATED' | 'VALIDATED' | 'NA' | 'REVIEW_REQUESTED' | 'REVIEWED' | 'EDITED';
     severity?: string;
     priority?: string;
     leadComment?: string;
     testerId: {
+        _id: string;
         name: string;
         username: string;
     };
@@ -82,6 +86,7 @@ interface IssueTableProps {
     hideAction?: boolean;
     actionLabel?: string;
     showTesterName?: boolean;
+    currentUserId?: string;
 }
 
 export function IssueTable({
@@ -94,9 +99,25 @@ export function IssueTable({
     showComment = false,
     hideAction = false,
     actionLabel = "Validate",
-    showTesterName = true
+    showTesterName = true,
+    currentUserId
 }: IssueTableProps) {
     const [previewMedia, setPreviewMedia] = useState<string | null>(null);
+
+    const getDisplayStatus = (issue: Issue) => {
+        if (mode === 'lead') return issue.status;
+
+        // Tester visibility rules
+        const ownerId = issue.testerId?._id;
+        const isOwner = currentUserId && ownerId && currentUserId === ownerId;
+
+        // Hide sensitive statuses from non-owners
+        if (!isOwner && (issue.status === 'REVIEW_REQUESTED' || issue.status === 'EDITED')) {
+            return 'NOT_VALIDATED';
+        }
+
+        return issue.status;
+    };
 
     return (
         <div className="rounded-md border">
@@ -106,11 +127,10 @@ export function IssueTable({
                         <TableHead className="w-[60px]">S.No</TableHead>
                         {showTesterName && <TableHead>Created By</TableHead>}
                         <TableHead>Title</TableHead>
-                        <TableHead className="hidden md:table-cell">Device/OS</TableHead>
-                        <TableHead className="hidden md:table-cell">Description</TableHead>
+                        <TableHead>Device/OS</TableHead>
                         <TableHead>Media</TableHead>
                         <TableHead>Severity</TableHead>
-                        <TableHead>Priority</TableHead>
+                        {mode === 'lead' && <TableHead>Priority</TableHead>}
                         {showComment && <TableHead>Comment</TableHead>}
                         {!hideStatus && <TableHead>Status</TableHead>}
                         <TableHead className="hidden lg:table-cell">Created At</TableHead>
@@ -129,28 +149,49 @@ export function IssueTable({
                             <TableRow key={issue._id}>
                                 <TableCell className="font-medium text-muted-foreground">{index + 1}</TableCell>
                                 {showTesterName && (
-                                    <TableCell className="font-medium">
-                                        {issue.testerId?.name || 'Unknown'}
-                                        <p className="text-xs text-muted-foreground">@{issue.testerId?.username}</p>
+                                    <TableCell>
+                                        <TruncatedText
+                                            text={issue.testerId?.name || 'Unknown'}
+                                            maxLength={25}
+                                            maxWidth="max-w-[120px]"
+                                            className="font-medium"
+                                        />
+                                        <p className="text-xs text-muted-foreground truncate max-w-[120px]">
+                                            @{issue.testerId?.username}
+                                        </p>
                                     </TableCell>
                                 )}
-                                <TableCell className="font-medium">{issue.title}</TableCell>
+                                <TableCell className="font-medium">
+                                    <TruncatedText
+                                        text={issue.title}
+                                        maxLength={60}
+                                        maxWidth="max-w-[250px]"
+                                    />
+                                </TableCell>
                                 <TableCell className="hidden md:table-cell text-xs">
                                     {issue.deviceDetails ? (
-                                        <div className="flex flex-col">
-                                            <span>{issue.deviceDetails}</span>
-                                            <span className="text-muted-foreground">{issue.osVersion}</span>
+                                        <div className="flex flex-col max-w-[150px]">
+                                            <TruncatedText
+                                                text={issue.deviceDetails}
+                                                maxLength={30}
+                                                maxWidth="max-w-full"
+                                                className="text-xs"
+                                            />
+                                            <TruncatedText
+                                                text={issue.osVersion || ''}
+                                                maxLength={30}
+                                                maxWidth="max-w-full"
+                                                className="text-xs text-muted-foreground"
+                                            />
                                         </div>
                                     ) : (
                                         <span className="text-muted-foreground">—</span>
                                     )}
                                 </TableCell>
-                                <TableCell className="max-w-[150px] truncate hidden md:table-cell">
-                                    {issue.description}
-                                </TableCell>
+
                                 <TableCell>
                                     {issue.media ? (
-                                        <button 
+                                        <button
                                             onClick={() => setPreviewMedia(issue.media || null)}
                                             className="flex items-center justify-center w-8 h-8 rounded border bg-muted hover:bg-muted/80 overflow-hidden cursor-pointer transition-colors"
                                         >
@@ -177,24 +218,31 @@ export function IssueTable({
                                         <span className="text-xs text-muted-foreground">-</span>
                                     )}
                                 </TableCell>
-                                <TableCell>
-                                    {issue.priority ? (
-                                        <Badge variant={PRIORITY_VARIANTS[issue.priority] || 'outline'} className="text-[10px]">
-                                            {issue.priority}
-                                        </Badge>
-                                    ) : (
-                                        <span className="text-xs text-muted-foreground">-</span>
-                                    )}
-                                </TableCell>
+                                {mode === 'lead' && (
+                                    <TableCell>
+                                        {issue.priority ? (
+                                            <Badge variant={PRIORITY_VARIANTS[issue.priority] || 'outline'} className="text-[10px]">
+                                                {issue.priority}
+                                            </Badge>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground">-</span>
+                                        )}
+                                    </TableCell>
+                                )}
                                 {showComment && (
-                                    <TableCell className="max-w-[150px] truncate text-xs italic text-muted-foreground">
-                                        {issue.leadComment || '—'}
+                                    <TableCell>
+                                        <TruncatedText
+                                            text={issue.leadComment || '—'}
+                                            maxLength={60}
+                                            maxWidth="max-w-[180px]"
+                                            className="text-xs italic text-muted-foreground"
+                                        />
                                     </TableCell>
                                 )}
                                 {!hideStatus && (
                                     <TableCell>
-                                        <Badge variant={STATUS_VARIANTS[issue.status] || 'default'}>
-                                            {STATUS_LABELS[issue.status] || issue.status}
+                                        <Badge variant={STATUS_VARIANTS[getDisplayStatus(issue)] || 'default'}>
+                                            {STATUS_LABELS[getDisplayStatus(issue)] || getDisplayStatus(issue)}
                                         </Badge>
                                     </TableCell>
                                 )}
@@ -209,11 +257,11 @@ export function IssueTable({
                                             </Button>
                                         ) : (
                                             <div className="flex gap-2 justify-end items-center">
-                                                {issue.status === 'REVIEW_REQUESTED' && (
-                                                    <Button 
-                                                        size="sm" 
-                                                        variant="outline" 
-                                                        className="h-7 text-[10px] border-amber-200 text-amber-700 hover:bg-amber-50" 
+                                                {issue.status === 'REVIEW_REQUESTED' && currentUserId === issue.testerId?._id && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="h-7 text-[10px] border-amber-200 text-amber-700 hover:bg-amber-50"
                                                         onClick={() => onEdit?.(issue)}
                                                     >
                                                         Edit
@@ -250,10 +298,10 @@ export function IssueTable({
                     )}
                 </TableBody>
             </Table>
-            <MediaPreviewModal 
-                open={!!previewMedia} 
-                url={previewMedia} 
-                onOpenChange={(open) => !open && setPreviewMedia(null)} 
+            <MediaPreviewModal
+                open={!!previewMedia}
+                url={previewMedia}
+                onOpenChange={(open) => !open && setPreviewMedia(null)}
             />
         </div>
     );

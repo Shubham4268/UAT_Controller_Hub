@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import User from '@/models/User';
 import { getAuthUser } from '@/lib/auth/auth';
+import { signJWT } from '@/lib/auth/jwt';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -58,7 +59,29 @@ export async function PUT(request: Request) {
             { new: true, runValidators: true }
         );
 
-        return NextResponse.json(updatedUser);
+        if (!updatedUser) {
+            return NextResponse.json({ error: 'Failed to update user' }, { status: 404 });
+        }
+
+        // Regenerate JWT with updated user details
+        const token = await signJWT({
+            userId: updatedUser._id.toString(),
+            role: updatedUser.role,
+            username: updatedUser.username,
+            name: updatedUser.name,
+        });
+
+        const response = NextResponse.json(updatedUser);
+
+        response.cookies.set('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 60 * 60 * 24, // 24 hours
+        });
+
+        return response;
     } catch (error) {
         console.error('Error updating profile:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

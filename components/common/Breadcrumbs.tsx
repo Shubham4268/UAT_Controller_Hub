@@ -18,32 +18,55 @@ const ROUTE_LABELS: Record<string, string> = {
     'team': 'Team',
     'data': 'Data',
     'settings': 'Settings',
+    'members': 'Members',
     'add': 'Create New',
-    'edit': 'Edit'
+    'edit': 'Edit',
+    'view': 'View Details',
+    'projects': 'Projects',
+    'test-cycle': 'Test Cycle'
 };
 
 // Overrides for specific path combinations
 const PATH_OVERRIDES: Record<string, string> = {
+    // Lead routes
+    '/lead/dashboard': 'Lead Dashboard',
     '/lead/activities': 'Manage Activities',
+    '/lead/my-activities': 'My Activities',
+
+    // Tester routes
     '/tester/activities': 'My Activities',
+    '/tester/profile': 'My Profile',
+
+    // Admin routes
+    '/admin': 'Admin Dashboard',
+    '/admin/activities': 'Manage Activities',
+    '/admin/team': 'Team Management',
+    '/admin/settings': 'Settings',
+    '/admin/data': 'Data Management',
+
+    // Common routes
+    '/dashboard': 'Dashboard',
+    '/team': 'Team',
+    '/activities': 'Activities',
+    '/members': 'Members'
 };
 
 export function Breadcrumbs() {
     const pathname = usePathname();
-    
+
     // Don't show breadcrumbs on login or home
     if (!pathname || pathname === '/' || pathname === '/login') return null;
 
     const segments = pathname.split('/').filter(Boolean);
-    
+
     const breadcrumbs = segments.reduce((acc: any[], segment, index) => {
         let path = `/${segments.slice(0, index + 1).join('/')}`;
-        
+
         // Skip some segments that are just grouping or redundant
-        if (segment === '(app)') return acc;
+        if (segment === '(app)' || segment === 'tester' || segment === 'lead') return acc;
 
         let label = ROUTE_LABELS[segment] || segment;
-        
+
         // Check for path overrides
         if (PATH_OVERRIDES[path]) {
             label = PATH_OVERRIDES[path];
@@ -74,13 +97,13 @@ export function Breadcrumbs() {
             // Determine label based on preceding segment
             const prevSegment = segments[index - 1];
             if (prevSegment === 'activities' || prevSegment === 'sessions') {
-                label = 'Details';
+                label = 'Activity Details';
             } else if (prevSegment === 'issues') {
-                label = 'Issue';
+                label = 'Issue Details';
             } else if (prevSegment === 'team') {
-                label = 'Member';
+                label = 'Member Details';
             } else {
-                label = 'View';
+                label = 'Details';
             }
         }
 
@@ -96,8 +119,8 @@ export function Breadcrumbs() {
         <nav aria-label="Breadcrumb" className="flex items-center text-sm font-medium text-muted-foreground">
             <ol className="flex items-center space-x-2">
                 <li>
-                    <Link 
-                        href="/dashboard" 
+                    <Link
+                        href="/dashboard"
                         className="flex items-center hover:text-primary transition-colors duration-200"
                     >
                         <Home className="h-4 w-4" />

@@ -5,6 +5,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
+    titleSchema,
+    descriptionSchema,
+    scopeSchema,
+    appLinkSchema,
+} from '@/lib/validation/schemas';
+import {
     Dialog,
     DialogContent,
     DialogHeader,
@@ -37,11 +43,11 @@ import { TemplateBuilder } from './TemplateBuilder';
 import { IssueTemplate } from '@/config/templates';
 
 const formSchema = z.object({
-    title: z.string().min(1, 'Title is required').max(100, 'Title must be under 100 chars'),
-    description: z.string().min(1, 'Description is required'),
-    scope: z.string().min(1, 'Select a scope'),
-    androidAppLink: z.string().url('Invalid URL').optional().or(z.literal('')),
-    iosAppLink: z.string().url('Invalid URL').optional().or(z.literal('')),
+    title: titleSchema,
+    description: descriptionSchema,
+    scope: scopeSchema,
+    androidAppLink: appLinkSchema,
+    iosAppLink: appLinkSchema,
     template: z.any(), // Validated by TemplateBuilder
 });
 
@@ -76,7 +82,11 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
             iosAppLink: '',
             template: null,
         },
+        mode: 'onChange', // Enable real-time validation
     });
+
+    // Watch form values for real-time character counter updates
+    const watchedValues = form.watch();
 
     async function onSubmit(values: FormValues) {
         setLoading(true);
@@ -136,14 +146,30 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                             <FormField
                                 control={form.control}
+                                name="template"
+                                render={({ field }) => (
+                                    <TemplateBuilder onChange={field.onChange} />
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
                                 name="title"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Test Sanity Title</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="e.g. Weekly Sanity - Login Flow" {...field} />
+                                            <Input
+                                                placeholder="e.g. Weekly Sanity - Login Flow"
+                                                maxLength={100}
+                                                {...field}
+                                            />
                                         </FormControl>
-                                        <FormMessage />
+                                        <div className="flex justify-between items-center">
+                                            <FormMessage />
+                                            <span className="text-xs text-muted-foreground">
+                                                {(watchedValues?.title?.length || 0)} / 100
+                                            </span>
+                                        </div>
                                     </FormItem>
                                 )}
                             />
@@ -158,10 +184,16 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
                                             <Textarea
                                                 placeholder="Detailed notes about the manual testing session..."
                                                 className="min-h-[100px]"
+                                                maxLength={2000}
                                                 {...field}
                                             />
                                         </FormControl>
-                                        <FormMessage />
+                                        <div className="flex justify-between items-center">
+                                            <FormMessage />
+                                            <span className="text-xs text-muted-foreground">
+                                                {watchedValues?.description?.length || 0} / 2000
+                                            </span>
+                                        </div>
                                     </FormItem>
                                 )}
                             />
@@ -226,9 +258,20 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
                                         <FormItem>
                                             <FormLabel>Android App Link (Optional)</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="https://play.google.com/..." {...field} />
+                                                <Input
+                                                    placeholder="https://play.google.com/..."
+                                                    maxLength={500}
+                                                    {...field}
+                                                />
                                             </FormControl>
-                                            <FormMessage />
+                                            <div className="flex justify-between items-center">
+                                                <FormMessage />
+                                                {watchedValues?.androidAppLink && (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {(watchedValues?.androidAppLink?.length || 0)} / 500
+                                                    </span>
+                                                )}
+                                            </div>
                                         </FormItem>
                                     )}
                                 />
@@ -239,21 +282,26 @@ export function TestSessionModal({ onSuccess }: { onSuccess?: (data: any) => voi
                                         <FormItem>
                                             <FormLabel>iOS App Link (Optional)</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="https://apps.apple.com/..." {...field} />
+                                                <Input
+                                                    placeholder="https://apps.apple.com/..."
+                                                    maxLength={500}
+                                                    {...field}
+                                                />
                                             </FormControl>
-                                            <FormMessage />
+                                            <div className="flex justify-between items-center">
+                                                <FormMessage />
+                                                {watchedValues?.iosAppLink && (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {(watchedValues?.iosAppLink?.length || 0)} / 500
+                                                    </span>
+                                                )}
+                                            </div>
                                         </FormItem>
                                     )}
                                 />
                             </div>
 
-                            <FormField
-                                control={form.control}
-                                name="template"
-                                render={({ field }) => (
-                                    <TemplateBuilder onChange={field.onChange} />
-                                )}
-                            />
+
 
                             <div className="flex justify-end gap-3 pt-4">
                                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>

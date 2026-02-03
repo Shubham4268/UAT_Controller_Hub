@@ -1,5 +1,6 @@
 import { Sidebar } from '@/components/common/Sidebar';
 import { Header } from '@/components/common/Header';
+
 import { getAuthUser } from '@/lib/auth/auth';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header user={user} />
+
+
 
         <main className="flex-1 overflow-y-auto bg-background p-6">{children}</main>
       </div>

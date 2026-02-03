@@ -12,6 +12,11 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
   archivedAt?: Date;
+  devices?: Array<{
+    name: string;
+    os: string;
+    osVersion: string;
+  }>;
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -38,6 +43,11 @@ const UserSchema: Schema<IUser> = new Schema(
       enum: Object.values(ROLES),
       default: ROLES.MEMBER,
     },
+    devices: [{
+      name: { type: String, required: true },
+      os: { type: String, required: true },
+      osVersion: { type: String, required: true }
+    }],
     archivedAt: { type: Date },
   },
   { timestamps: true }
@@ -51,6 +61,10 @@ UserSchema.pre<IUser>('save', function () {
 });
 
 // Prevent overwrite on hot reload
+if (process.env.NODE_ENV === 'development' && mongoose.models.User) {
+  delete mongoose.models.User;
+}
+
 const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 
 export default User;

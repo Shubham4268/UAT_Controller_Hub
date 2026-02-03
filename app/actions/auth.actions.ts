@@ -10,7 +10,7 @@ export async function logout() {
   const cookieStore = await cookies();
 
   // Delete the auth token cookie
-  cookieStore.delete('auth-token');
+  cookieStore.delete('token');
 
   // Redirect to login page
   redirect('/login');

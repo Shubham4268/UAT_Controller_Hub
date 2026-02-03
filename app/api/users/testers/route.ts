@@ -30,9 +30,9 @@ export async function GET() {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // Fetch all users with role TESTER
-        const testers = await User.find({ role: ROLES.TESTER })
-            .select('name username email image role createdAt') // Select public fields
+        // Fetch all users with role TESTER or LEAD
+        const testers = await User.find({ role: { $in: [ROLES.TESTER, ROLES.LEAD] } })
+            .select('name username email image role devices createdAt') // Select public fields
             .sort({ name: 1 });
 
         return NextResponse.json(testers);

@@ -11,7 +11,7 @@ export interface IIssue extends Document {
     deviceDetails?: string;
     osVersion?: string;
     leadComment?: string;
-    status: 'NOT_VALIDATED' | 'VALIDATED' | 'NA' | 'REVIEW_REQUESTED' | 'REVIEWED';
+    status: 'NOT_VALIDATED' | 'VALIDATED' | 'NA' | 'REVIEW_REQUESTED' | 'REVIEWED' | 'EDITED';
     // Dynamic fields data based on template
     dynamicData?: Record<string, any>;
     validatedAt?: Date;
@@ -45,7 +45,7 @@ const IssueSchema: Schema<IIssue> = new Schema(
         leadComment: { type: String },
         status: {
             type: String,
-            enum: ['NOT_VALIDATED', 'VALIDATED', 'NA', 'REVIEW_REQUESTED', 'REVIEWED'],
+            enum: ['NOT_VALIDATED', 'VALIDATED', 'NA', 'REVIEW_REQUESTED', 'REVIEWED', 'EDITED'],
             default: 'NOT_VALIDATED',
         },
         dynamicData: { type: Map, of: Schema.Types.Mixed },

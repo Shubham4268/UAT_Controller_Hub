@@ -62,6 +62,9 @@ export async function PATCH(
                 if (status === 'VALIDATED' || status === 'NA') {
                     issue.validatedAt = new Date();
                 }
+                if (status === 'NA') {
+                    issue.severity = 'NA';
+                }
             }
             if (severity) issue.severity = severity;
             if (priority !== undefined) issue.priority = priority || undefined;
@@ -76,9 +79,10 @@ export async function PATCH(
             if (description) issue.description = description;
             if (media) issue.media = media;
             if (dynamicData) issue.dynamicData = dynamicData;
-            
+
             // Auto-resubmit
-            issue.status = 'NOT_VALIDATED';
+            issue.status = 'EDITED';
+            issue.leadComment = undefined; // Clear comment
         }
 
         await issue.save();

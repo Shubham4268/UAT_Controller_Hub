@@ -38,67 +38,73 @@ export function IssueDetailsModal({ issue, open, onOpenChange }: IssueDetailsMod
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <div className="flex justify-between items-start gap-4 pr-6">
-                        <div className="space-y-1">
-                            <DialogTitle className="text-xl leading-tight">{issue.title}</DialogTitle>
-                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-1">
-                                <span className="flex items-center gap-1">
-                                    <User className="h-3 w-3" />
-                                    {issue.testerId?.name || 'Unknown Tester'}
-                                </span>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {new Date(issue.createdAt).toLocaleString()}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-2 shrink-0 items-end">
-                            <Badge variant={STATUS_VARIANTS[issue.status] || 'secondary'}>
-                                {issue.status === 'NOT_VALIDATED' ? 'Pending Review' : issue.status}
-                            </Badge>
-                            {issue.severity && (
-                                <Badge variant={SEVERITY_VARIANTS[issue.severity]} className="text-[10px]">
-                                    {issue.severity}
-                                </Badge>
-                            )}
-                        </div>
+            <DialogContent className="max-w-[50vw] max-h-[90vh] w-full flex flex-col p-0 gap-0 overflow-hidden">
+                <DialogHeader className="p-6 pb-2 shrink-0">
+                    <div className="flex justify-between items-start gap-4">
+                        <DialogTitle className="text-xl sm:text-2xl font-bold leading-tight wrap-break-word">
+                            {issue.title}
+                        </DialogTitle>
+                        <Badge variant={STATUS_VARIANTS[issue.status] || 'secondary'} className="shrink-0 h-6 mt-4">
+                            {issue.status === 'NOT_VALIDATED' ? 'Pending Review' : issue.status.replace(/_/g, ' ')}
+                        </Badge>
                     </div>
                 </DialogHeader>
 
-                <div className="space-y-6 py-4">
-                    {/* Device Details */}
-                    {(issue.deviceDetails || issue.osVersion) && (
-                        <div className="flex items-center gap-2 p-3 bg-muted/40 rounded-lg border border-dashed">
-                            <Smartphone className="h-4 w-4 text-muted-foreground" />
-                            <div className="text-sm">
-                                <span className="font-semibold">{issue.deviceDetails || 'Unknown Device'}</span>
-                                {issue.osVersion && <span className="text-muted-foreground ml-2">({issue.osVersion})</span>}
+                <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-6">
+                    {/* Status Banner - Review Requested */}
+                    {issue.status === 'REVIEW_REQUESTED' && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex gap-3 text-amber-900">
+                            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                                <h4 className="font-semibold text-sm">Action Required: Review Requested</h4>
+                                {issue.leadComment && (
+                                    <p className="text-sm text-amber-800">{issue.leadComment}</p>
+                                )}
                             </div>
                         </div>
                     )}
 
+                    {/* Metadata */}
+                    <div className="flex flex-wrap gap-4 text-xs text-muted-foreground border-b pb-4">
+                        <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-md">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>Created {new Date(issue.createdAt).toLocaleString()}</span>
+                        </div>
+                        {issue.severity && (
+                            <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-md">
+                                <span className="font-medium text-foreground/80">Severity:</span>
+                                <span>{issue.severity}</span>
+                            </div>
+                        )}
+                        {(issue.deviceDetails || issue.osVersion) && (
+                            <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-md">
+                                <Smartphone className="h-3.5 w-3.5" />
+                                <span>{issue.deviceDetails || 'Unknown Device'} {issue.osVersion ? `(${issue.osVersion})` : ''}</span>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-md">
+                            <User className="h-3.5 w-3.5" />
+                            <span>@{issue.testerId?.username || 'unknown'}</span>
+                        </div>
+                    </div>
+
                     {/* Description */}
-                    <div className="space-y-2">
-                        <Label>Description</Label>
-                        <div className="min-h-[80px] p-3 bg-muted/30 rounded-lg border text-sm whitespace-pre-wrap leading-relaxed">
+                    <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-foreground/90 uppercase tracking-wider">Description</h3>
+                        <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90 bg-muted/20 p-4 rounded-lg border">
                             {issue.description}
                         </div>
                     </div>
 
                     {/* Dynamic Data */}
                     {issue.dynamicData && Object.keys(issue.dynamicData).length > 0 && (
-                        <div className="space-y-2">
-                            <Label>Additional Details</Label>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-muted/20 rounded-lg border border-dashed text-sm">
+                        <div className="space-y-3">
+                            <h3 className="text-sm font-semibold text-foreground/90 uppercase tracking-wider">Additional Details</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {Object.entries(issue.dynamicData).map(([key, value]) => (
-                                    <div key={key} className="flex flex-col">
-                                        <span className="text-xs font-semibold uppercase text-muted-foreground mb-0.5">
-                                            {key.replace(/_/g, ' ')}
-                                        </span>
-                                        <span className="text-foreground">{String(value)}</span>
+                                    <div key={key} className="p-3 bg-muted/20 rounded-lg border">
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">{key.replace(/_/g, ' ')}</p>
+                                        <p className="text-sm wrap-break-word">{String(value)}</p>
                                     </div>
                                 ))}
                             </div>
@@ -106,45 +112,42 @@ export function IssueDetailsModal({ issue, open, onOpenChange }: IssueDetailsMod
                     )}
 
                     {/* Media */}
-                    {issue.media && (
-                        <div className="space-y-2">
-                            <Label>Attachment</Label>
-                            <div className="border rounded-xl overflow-hidden bg-black/5 flex justify-center items-center relative group">
+                    {issue.media ? (
+                        <div className="space-y-3">
+                            <h3 className="text-sm font-semibold text-foreground/90 uppercase tracking-wider">Attached Media</h3>
+                            <div className="rounded-xl overflow-hidden border bg-black/5">
                                 <img
                                     src={issue.media}
-                                    alt="Issue Proof"
-                                    className="max-h-[400px] object-contain w-full"
-                                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                                    alt="Issue Evidence"
+                                    className="w-full h-auto object-contain max-h-[60vh] mx-auto"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.parentElement!.innerHTML = `
+                                            <div class="p-8 text-center text-muted-foreground">
+                                                <p>Media preview is not supported</p>
+                                                <a href="${issue.media}" target="_blank" class="text-primary hover:underline text-sm mt-2 inline-block">Open Link Directly</a>
+                                            </div>
+                                        `;
+                                    }}
                                 />
-                                <a
-                                    href={issue.media}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-medium"
-                                >
-                                    Open Full Size
-                                </a>
+                                <div className="p-3 bg-muted/50 border-t flex justify-end">
+                                    <Button variant="outline" size="sm" asChild className="gap-2">
+                                        <a href={issue.media} target="_blank" rel="noopener noreferrer">
+                                            Open Full Size
+                                        </a>
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    )}
-
-                    {/* Lead Comments */}
-                    {issue.leadComment && (
-                        <>
-                            <div className="h-px bg-border my-4" />
-                            <div className="space-y-2 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                                <div className="flex items-center gap-2 text-blue-700">
-                                    <MessageSquare className="h-4 w-4" />
-                                    <h4 className="font-semibold text-sm">Lead's Feedback</h4>
-                                </div>
-                                <p className="text-sm text-blue-900/80">{issue.leadComment}</p>
-                            </div>
-                        </>
+                    ) : (
+                        <div className="p-8 text-center border rounded-lg border-dashed text-muted-foreground">
+                            No media attached
+                        </div>
                     )}
                 </div>
 
-                <DialogFooter>
-                    <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+                <DialogFooter className="p-4 border-t bg-muted/10 shrink-0">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
                         Close
                     </Button>
                 </DialogFooter>

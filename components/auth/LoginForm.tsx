@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
 import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { loginFormSchema } from '@/lib/validation/schemas';
 import {
   Form,
   FormControl,
@@ -16,25 +15,12 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { login } from '@/lib/auth/auth';
+import { LogIn } from 'lucide-react';
 
-// Zod schema for login form validation
-const loginSchema = z.object({
-  username: z
-  .string()
-  .min(1, 'Username is required')
-  .regex(
-    /^[A-Za-z0-9]+\.[A-Za-z0-9]+$/,
-    'Username must be in format First.Last (letters and numbers allowed, e.g., John1.Doe2)'
-  ),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number'),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export function LoginForm() {
   const router = useRouter();
@@ -42,7 +28,7 @@ export function LoginForm() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginFormSchema),
     defaultValues: {
       username: '',
       password: '',
@@ -97,7 +83,7 @@ export function LoginForm() {
                   <FormLabel>Username</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="First.Last"
+                      placeholder="Enter username"
                       autoComplete="username"
                       disabled={isLoading}
                       {...field}

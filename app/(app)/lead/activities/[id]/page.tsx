@@ -185,6 +185,7 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
                                 </Button>
                             )}
 
+
                             {session.status === 'STOPPED' ? (
                                 <Button
                                     onClick={handleToggleSession}
@@ -233,7 +234,7 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
 
             <div className="space-y-6">
                 <Card className="overflow-hidden border-2 border-primary/10">
-                    <CardHeader 
+                    <CardHeader
                         className="bg-primary/5 py-3 cursor-pointer select-none transition-colors hover:bg-primary/10"
                         onClick={() => setShowPending(!showPending)}
                     >
@@ -241,9 +242,9 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
                             <CardTitle className="text-sm font-bold flex items-center gap-2">
                                 🧾 Issues To Be Validated ({pendingIssues.length})
                             </CardTitle>
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 className="h-6 w-6 p-0 hover:bg-transparent"
                             >
                                 {showPending ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -265,7 +266,7 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
                 </Card>
 
                 <Card className="overflow-hidden border-2 border-primary/10">
-                    <CardHeader 
+                    <CardHeader
                         className="bg-primary/5 py-3 cursor-pointer select-none transition-colors hover:bg-primary/10"
                         onClick={() => setShowValidated(!showValidated)}
                     >
@@ -273,9 +274,9 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
                             <CardTitle className="text-sm font-bold flex items-center gap-2">
                                 ✅ Validated / NA Issues ({validatedIssues.length})
                             </CardTitle>
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 className="h-6 w-6 p-0 hover:bg-transparent"
                             >
                                 {showValidated ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}

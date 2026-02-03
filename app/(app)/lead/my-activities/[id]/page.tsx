@@ -24,7 +24,7 @@ interface Activity {
     metadata?: Record<string, any>;
 }
 
-export default function TesterActivityDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function LeadMyActivityDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const [session, setSession] = useState<any | null>(null);
     const [issues, setIssues] = useState<any[]>([]);
@@ -143,7 +143,7 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
                             )}
                         </div>
                     </div>
-                    <p className="text-muted-foreground capitalize text-sm">Test Session - Reporter View</p>
+                    <p className="text-muted-foreground capitalize text-sm">Test Session - Tester View (Lead Access)</p>
                 </div>
                 {session.completionStatus === 'COMPLETED' ? (
                     <div className="flex items-center gap-2 text-blue-700 bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 border-dashed">
@@ -175,7 +175,7 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
                     <CheckCircle2 className="h-4 w-4" />
                     <AlertTitle>Session Successfully Completed</AlertTitle>
                     <AlertDescription>
-                        This session has been marked as completed by the Lead. No further issues can be reported.
+                        This session has been marked as completed. No further issues can be reported.
                     </AlertDescription>
                 </Alert>
             ) : session.status === 'STOPPED' && (
@@ -308,7 +308,7 @@ export default function TesterActivityDetailPage({ params }: { params: Promise<{
                             <div className="space-y-0.5">
                                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                                     <Users className="h-4 w-4" />
-                                    All tester Issues ({issues.length})
+                                    All Issues ({issues.length})
                                 </CardTitle>
                                 <p className="text-[10px] text-muted-foreground font-normal ml-6">Comprehensive log of all issues reported in this session.</p>
                             </div>
