@@ -11,10 +11,16 @@ export interface IIssue extends Document {
     deviceDetails?: string;
     osVersion?: string;
     leadComment?: string;
-    status: 'NOT_VALIDATED' | 'VALIDATED' | 'NA';
+    status: 'NOT_VALIDATED' | 'VALIDATED' | 'NA' | 'REVIEW_REQUESTED' | 'REVIEWED';
     // Dynamic fields data based on template
     dynamicData?: Record<string, any>;
     validatedAt?: Date;
+    aiReviewedAt?: Date;
+    aiReviewData?: {
+        duplicateCheckPerformed: boolean;
+        matchedIssues?: string[];
+        confidenceScore?: number;
+    };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -39,11 +45,20 @@ const IssueSchema: Schema<IIssue> = new Schema(
         leadComment: { type: String },
         status: {
             type: String,
-            enum: ['NOT_VALIDATED', 'VALIDATED', 'NA'],
+            enum: ['NOT_VALIDATED', 'VALIDATED', 'NA', 'REVIEW_REQUESTED', 'REVIEWED'],
             default: 'NOT_VALIDATED',
         },
         dynamicData: { type: Map, of: Schema.Types.Mixed },
         validatedAt: { type: Date },
+        aiReviewedAt: { type: Date },
+        aiReviewData: {
+            type: {
+                duplicateCheckPerformed: { type: Boolean, default: false },
+                matchedIssues: [{ type: String }],
+                confidenceScore: { type: Number }
+            },
+            required: false
+        },
     },
     { timestamps: true }
 );

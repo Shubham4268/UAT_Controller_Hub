@@ -24,12 +24,16 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | 
     NOT_VALIDATED: 'secondary',
     VALIDATED: 'default', // Using default/primary for validated
     NA: 'outline',
+    REVIEW_REQUESTED: 'destructive', // Use distinctive color
+    REVIEWED: 'default', // AI-reviewed with media
 };
 
 const STATUS_LABELS: Record<string, string> = {
     NOT_VALIDATED: 'Not Validated',
     VALIDATED: 'Validated',
     NA: 'N/A',
+    REVIEW_REQUESTED: 'Edit Requested',
+    REVIEWED: 'AI Reviewed',
 };
 
 const SEVERITY_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -54,7 +58,7 @@ interface Issue {
     deviceDetails?: string;
     osVersion?: string;
     media?: string;
-    status: string;
+    status: 'NOT_VALIDATED' | 'VALIDATED' | 'NA' | 'REVIEW_REQUESTED' | 'REVIEWED';
     severity?: string;
     priority?: string;
     leadComment?: string;
@@ -72,6 +76,7 @@ interface IssueTableProps {
     mode: 'tester' | 'lead';
     onValidate?: (issue: Issue) => void;
     onView?: (issue: Issue) => void;
+    onEdit?: (issue: Issue) => void;
     hideStatus?: boolean;
     showComment?: boolean;
     hideAction?: boolean;
@@ -84,6 +89,7 @@ export function IssueTable({
     mode,
     onValidate,
     onView,
+    onEdit,
     hideStatus = false,
     showComment = false,
     hideAction = false,
@@ -202,29 +208,40 @@ export function IssueTable({
                                                 {actionLabel}
                                             </Button>
                                         ) : (
-                                            onView ? (
-                                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onView(issue)}>
-                                                    <span className="sr-only">View</span>
-                                                    {/* Importing Eye icon here to avoid top-level import conflict if needed, or assume it's imported */}
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        width="16"
-                                                        height="16"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        className="lucide lucide-eye"
+                                            <div className="flex gap-2 justify-end items-center">
+                                                {issue.status === 'REVIEW_REQUESTED' && (
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="outline" 
+                                                        className="h-7 text-[10px] border-amber-200 text-amber-700 hover:bg-amber-50" 
+                                                        onClick={() => onEdit?.(issue)}
                                                     >
-                                                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                                                        <circle cx="12" cy="12" r="3" />
-                                                    </svg>
-                                                </Button>
-                                            ) : (
-                                                <span className="text-xs text-muted-foreground">View Only</span>
-                                            )
+                                                        Edit
+                                                    </Button>
+                                                )}
+                                                {onView ? (
+                                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onView(issue)}>
+                                                        <span className="sr-only">View</span>
+                                                        <svg
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                            width="16"
+                                                            height="16"
+                                                            viewBox="0 0 24 24"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            className="lucide lucide-eye"
+                                                        >
+                                                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                                            <circle cx="12" cy="12" r="3" />
+                                                        </svg>
+                                                    </Button>
+                                                ) : (
+                                                    <span className="text-[10px] text-muted-foreground mr-2">View Only</span>
+                                                )}
+                                            </div>
                                         )}
                                     </TableCell>
                                 )}

@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { IssueTable } from '@/components/common/IssueTable';
-import { ValidationModal } from '@/components/lead/ValidationModal';
 import { AppQrSection } from '@/components/common/AppQrSection';
 import { useSocket } from '@/components/providers/SocketProvider';
 import { CompletionConfirmModal } from '@/components/lead/CompletionConfirmModal';
@@ -21,11 +21,10 @@ interface Activity {
 
 export default function LeadActivityDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
+    const router = useRouter();
     const [session, setSession] = useState<any | null>(null);
     const [issues, setIssues] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedIssue, setSelectedIssue] = useState<any | null>(null);
-    const [isValidationOpen, setIsValidationOpen] = useState(false);
     const [toggling, setToggling] = useState(false);
     const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
     const [showPending, setShowPending] = useState(true);
@@ -85,17 +84,7 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
     }, [id, socket]);
 
     const handleValidate = (issue: any) => {
-        setSelectedIssue(issue);
-        setIsValidationOpen(true);
-    };
-
-    const onValidationSuccess = (updatedIssue: any) => {
-        setIssues((prev) =>
-            prev.map((iss) => (iss._id === updatedIssue._id ? updatedIssue : iss))
-        );
-        if (socket) {
-            socket.emit('issue:validated', { ...updatedIssue, sessionId: id });
-        }
+        router.push(`/lead/sessions/${id}/issues/${issue._id}/validate`);
     };
 
     const handleToggleSession = async () => {
@@ -307,29 +296,6 @@ export default function LeadActivityDetailPage({ params }: { params: Promise<{ i
                     )}
                 </Card>
             </div>
-
-            <ValidationModal
-                issue={selectedIssue}
-                open={isValidationOpen}
-                onOpenChange={setIsValidationOpen}
-                onSuccess={onValidationSuccess}
-                currentIndex={pendingIssues.findIndex(iss => iss._id === selectedIssue?._id)}
-                totalCount={pendingIssues.length}
-                hasNext={pendingIssues.findIndex(iss => iss._id === selectedIssue?._id) < pendingIssues.length - 1}
-                hasPrevious={pendingIssues.findIndex(iss => iss._id === selectedIssue?._id) > 0}
-                onNext={() => {
-                    const currentIndex = pendingIssues.findIndex(iss => iss._id === selectedIssue?._id);
-                    if (currentIndex < pendingIssues.length - 1) {
-                        setSelectedIssue(pendingIssues[currentIndex + 1]);
-                    }
-                }}
-                onPrevious={() => {
-                    const currentIndex = pendingIssues.findIndex(iss => iss._id === selectedIssue?._id);
-                    if (currentIndex > 0) {
-                        setSelectedIssue(pendingIssues[currentIndex - 1]);
-                    }
-                }}
-            />
 
             <CompletionConfirmModal
                 open={isCompleteModalOpen}

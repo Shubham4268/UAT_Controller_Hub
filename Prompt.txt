@@ -1,0 +1,182 @@
+✅ Validation Navigation Rule
+
+During the issue validation process:
+
+The Next and Previous buttons must navigate only through issues that are not yet validated.
+
+Issues that are already validated must be skipped and should not be included in navigation.
+
+Once an issue is validated, it should be immediately removed from the active navigation flow.
+
+Navigation should dynamically update after each validation.
+
+Expected Behavior:
+
+Users can move only between pending (unvalidated) issues.
+
+Validated issues are excluded from Next/Previous navigation.
+
+If no pending issues remain, close the validation modal.
+
+
+-----------------------------------
+
+✅ Validation Navigation Behavior
+
+Only issues that are pending validation should be available for Next and Previous navigation.
+
+Issues that are already validated must not appear in the navigation flow.
+
+Next/Previous buttons should move only between unvalidated issues.
+
+Validated issues must be automatically excluded.
+
+Expected Result:
+Users can navigate only through issues that are still pending validation.
+
+------------------------------------------------
+✅ Revalidation Navigation Behavior (Validated/NA Issues)
+
+In the Validated/NA Issues table:
+
+When a lead clicks Revalidate, the issue opens in a new page.
+
+The Next and Previous buttons must navigate only through validated and NA issues.
+
+Navigation should include all issues in the Validated/NA list.
+
+Unvalidated or pending issues must not be included in this navigation flow.
+
+Expected Result:
+During revalidation, users can move only between issues that are already validated or marked as NA.
+
+------------------------------------------------
+✅ Global Breadcrumb Navigation (All Roles)
+
+Implement a breadcrumb navigation system across the entire website for all user roles (Admin, Lead, Tester).
+
+Requirements:
+
+Breadcrumbs must be visible on all main pages and workflows.
+
+Each breadcrumb item must reflect the actual navigation hierarchy.
+
+All breadcrumb links must use working, real routes (no placeholders).
+
+Clicking any breadcrumb should navigate to the correct page.
+
+Breadcrumbs should update dynamically based on the current route.
+
+Role-based pages should show role-relevant paths.
+
+Example:
+Home → Project → Test Cycle → Issues → Validate Issue
+
+Expected Result:
+Users can clearly see their current location and navigate back through valid routes using breadcrumbs.
+-----------------------------------------------------
+✅ Global Input Validation & Field Limits (All Modules)
+
+Implement proper validation rules and input limits for all input fields across the website, including media links, based on their functional requirements.
+
+Requirements:
+
+All form fields must have appropriate frontend and backend validation.
+
+Mandatory fields must be enforced (cannot be submitted empty).
+
+Apply minimum and maximum length limits for text fields (e.g., title, description, comments).
+
+Validate data types (email, number, URL, date, etc.).
+
+Restrict special characters where not allowed.
+
+Prevent SQL injection, XSS, and invalid payloads.
+
+Show clear, user-friendly validation error messages.
+
+For Media Links:
+
+Accept only valid URLs (http/https).
+
+Validate supported platforms/formats (e.g., image, video, drive links).
+
+Set maximum link length.
+
+Verify accessibility (optional: check if link is reachable).
+
+Block unsupported or broken links.
+
+Expected Result:
+Users can submit forms only with valid, well-formatted, and secure data, ensuring system reliability and data integrity.
+
+----------------------------------------------------------------
+
+✅ Text Truncation in Issue Tables (All Modules)
+
+Implement text truncation in all issue-related tables across the website to maintain consistent layout and readability.
+
+Requirements:
+
+Apply truncation to long text fields such as:
+
+Issue Title
+
+Description
+
+Module Name
+
+Comments
+
+Remarks
+
+Use ellipsis (...) for truncated content.
+
+Maintain a consistent maximum character/width limit across tables.
+
+Show the full content on hover (tooltip) or on click (modal/popover).
+
+Ensure truncation works on all screen sizes (responsive).
+
+Expected Result:
+All issue tables remain clean and readable, with long text properly truncated and accessible when needed.
+
+----------------------------------------------------------------
+
+✅ User Profile – Device Details Management (Backend Enhancement)
+
+Add a Device Details section in the User Profile to allow users to manage multiple devices.
+
+Requirements (Backend-Focused):
+
+Extend the user profile schema to support multiple devices per user.
+
+Each device entry must include:
+
+Device Name/Model
+
+Operating System (OS)
+
+Allow users to add, edit, and delete multiple device records.
+
+Validate device and OS fields (required, max length, supported formats).
+
+Store device details in a structured format (linked table or embedded object).
+
+Expose APIs to:
+
+Fetch user devices
+
+Add new device
+
+Update device
+
+Remove device
+
+Ensure proper authorization (users can manage only their own devices).
+
+Expected Result:
+Each user can maintain a list of devices in their profile, which can be used for issue reporting and analytics.
+
+----------------------------------------------------------------
+
